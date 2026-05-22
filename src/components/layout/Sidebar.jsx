@@ -1,7 +1,7 @@
 import { NavLink } from 'react-router-dom'
 import {
   LayoutDashboard, Users, MapPin, ClipboardList,
-  BookOpen, Leaf, LogOut, X, CheckSquare, QrCode, UserCog, Tag
+  BookOpen, Leaf, LogOut, X, CheckSquare, QrCode, UserCog, Tag, Calculator
 } from 'lucide-react'
 import { useAuth } from '../../contexts/AuthContext'
 import toast from 'react-hot-toast'
@@ -13,6 +13,7 @@ const NAV = {
     { to: '/leads',            icon: ClipboardList,   label: 'Leads'                },
     { to: '/pos-locations',    icon: MapPin,          label: 'POS Locations'        },
     { to: '/promo-codes',      icon: Tag,             label: 'Promo Codes'          },
+    { to: '/calculator',       icon: Calculator,      label: 'Ticket Calculator'    },
     { to: '/users',            icon: UserCog,         label: 'User Management'      },
     { to: '/qr-display',       icon: QrCode,          label: 'Show QR to Customer', external: true },
   ],
@@ -21,6 +22,7 @@ const NAV = {
     { to: '/bookings',         icon: ClipboardList,   label: 'Bookings'             },
     { to: '/leads',            icon: Users,           label: 'Leads'                },
     { to: '/pos-locations',    icon: MapPin,          label: 'Locations'            },
+    { to: '/calculator',       icon: Calculator,      label: 'Ticket Calculator'    },
     { to: '/qr-display',       icon: QrCode,          label: 'Show QR to Customer', external: true },
   ],
   accountant: [
