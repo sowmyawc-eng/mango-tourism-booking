@@ -63,16 +63,16 @@ export default function QRDisplayPage() {
     <div className="min-h-screen bg-gradient-to-br from-mango-400 to-orange-500 flex flex-col">
 
       {/* Banner */}
-      <div className="relative bg-[#c8e8e4]">
+      <div className="relative flex items-center justify-center px-4 pt-4 pb-2">
         <img
           src="/banner.avif"
           alt="Hanu Reddy Mango Tourism – June 2026"
-          className="w-full block"
-          style={{ maxHeight: '80px', objectFit: 'contain' }}
+          className="h-auto block rounded-2xl shadow-lg"
+          style={{ maxWidth: '340px', width: '100%' }}
         />
         <button
           onClick={toggleFullscreen}
-          className="absolute top-2 right-2 p-2 bg-black/30 hover:bg-black/50 rounded-xl text-white transition-colors"
+          className="absolute top-4 right-4 p-2 bg-black/20 hover:bg-black/40 rounded-xl text-white transition-colors"
           title="Toggle fullscreen"
         >
           <Maximize2 size={18} />

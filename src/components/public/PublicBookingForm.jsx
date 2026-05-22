@@ -174,12 +174,11 @@ export default function PublicBookingForm() {
     <div className="min-h-screen bg-gradient-to-br from-mango-50 to-orange-100 pb-12">
 
       {/* Banner */}
-      <div className="w-full bg-[#c8e8e4]">
+      <div className="w-full max-w-lg mx-auto">
         <img
           src="/banner.avif"
           alt="Hanu Reddy Mango Tourism – June 2026"
-          className="w-full block"
-          style={{ maxHeight: '88px', objectFit: 'contain' }}
+          className="w-full h-auto block"
         />
       </div>
       <div className="bg-mango-500 text-white px-4 py-2 text-center">

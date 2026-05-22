@@ -31,12 +31,11 @@ export default function LoginPage() {
                     dark:from-gray-900 dark:to-gray-800 px-4 py-8">
 
       {/* Banner */}
-      <div className="w-full max-w-sm rounded-2xl overflow-hidden shadow-xl mb-2 bg-[#c8e8e4]">
+      <div className="w-full max-w-sm rounded-2xl overflow-hidden shadow-xl mb-3">
         <img
           src="/banner.avif"
           alt="Hanu Reddy Mango Tourism – June 2026"
-          className="w-full block"
-          style={{ maxHeight: '96px', objectFit: 'contain' }}
+          className="w-full h-auto block"
         />
       </div>
 
