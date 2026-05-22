@@ -1,9 +1,10 @@
 import { useEffect, useState } from 'react'
 import { collection, getDocs, query, deleteDoc, doc, orderBy } from 'firebase/firestore'
 import { db } from '../../firebase'
-import { Plus, Search, Pencil, Trash2, User } from 'lucide-react'
-import { format } from 'date-fns'
+import { Plus, Search, Pencil, Trash2, User, Filter, X } from 'lucide-react'
+import { format, isAfter, isBefore, parseISO, startOfDay } from 'date-fns'
 import LeadForm from './LeadForm'
+import { useAuth } from '../../contexts/AuthContext'
 
 const STATUS_MAP = {
   new_lead:   { label: 'New Lead',         color: 'bg-blue-100 text-blue-700'     },
@@ -12,9 +13,15 @@ const STATUS_MAP = {
 }
 
 export default function LeadList() {
+  const { role } = useAuth()
+  const isAdmin  = role === 'super_admin'
+
   const [leads, setLeads]     = useState([])
   const [search, setSearch]   = useState('')
   const [filter, setFilter]   = useState('all')
+  const [dateFrom, setDateFrom] = useState('')
+  const [dateTo,   setDateTo]   = useState('')
+  const [showFilters, setShowFilters] = useState(false)
   const [loading, setLoading] = useState(true)
   const [showForm, setShowForm] = useState(false)
   const [editing, setEditing]  = useState(null)
@@ -27,12 +34,17 @@ export default function LeadList() {
 
   useEffect(() => { loadLeads() }, [])
 
+  const activeFilterCount = [filter !== 'all', !!dateFrom, !!dateTo].filter(Boolean).length
+
   const filtered = leads.filter(l => {
     const q = search.toLowerCase()
     const matchSearch = !q ||
       `${l.firstname} ${l.lastname} ${l.phone} ${l.email}`.toLowerCase().includes(q)
     const matchFilter = filter === 'all' || l.status === filter
-    return matchSearch && matchFilter
+    const createdDate = l.created_at?.toDate ? l.created_at.toDate() : null
+    const matchFrom = !dateFrom || !createdDate || !isBefore(createdDate, startOfDay(parseISO(dateFrom)))
+    const matchTo   = !dateTo   || !createdDate || !isAfter(createdDate,  startOfDay(parseISO(dateTo + 'T23:59:59')))
+    return matchSearch && matchFilter && matchFrom && matchTo
   })
 
   async function deleteLead(id) {
@@ -65,12 +77,61 @@ export default function LeadList() {
           />
         </div>
         <select className="input-field w-36" value={filter} onChange={e => setFilter(e.target.value)}>
-          <option value="all">All</option>
+          <option value="all">All Status</option>
           <option value="new_lead">New Lead</option>
           <option value="interested">Interested</option>
           <option value="follow_up">Follow-up</option>
         </select>
+        {isAdmin && (
+          <button
+            onClick={() => setShowFilters(v => !v)}
+            className={`flex items-center gap-1.5 px-3 rounded-xl border text-sm font-medium transition-colors ${
+              showFilters || activeFilterCount > 0
+                ? 'bg-mango-500 text-white border-mango-500'
+                : 'bg-white text-gray-600 border-gray-200 hover:border-mango-400'
+            }`}
+          >
+            <Filter size={14} />
+            {activeFilterCount > 0 && (
+              <span className="bg-white text-mango-600 text-xs font-bold rounded-full w-4 h-4 flex items-center justify-center">
+                {activeFilterCount}
+              </span>
+            )}
+          </button>
+        )}
       </div>
+
+      {/* Date range filters (admin) */}
+      {isAdmin && showFilters && (
+        <div className="card p-3 border border-mango-100">
+          <div className="flex items-center justify-between mb-2">
+            <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Date Range</p>
+            {activeFilterCount > 0 && (
+              <button onClick={() => { setFilter('all'); setDateFrom(''); setDateTo('') }}
+                className="text-xs text-red-500 flex items-center gap-1">
+                <X size={12} /> Clear
+              </button>
+            )}
+          </div>
+          <div className="grid grid-cols-2 gap-2">
+            <div>
+              <label className="label text-xs">From</label>
+              <input type="date" className="input-field text-sm" value={dateFrom} onChange={e => setDateFrom(e.target.value)} />
+            </div>
+            <div>
+              <label className="label text-xs">To</label>
+              <input type="date" className="input-field text-sm" value={dateTo} onChange={e => setDateTo(e.target.value)} />
+            </div>
+          </div>
+        </div>
+      )}
+
+      {!loading && (
+        <p className="text-xs text-gray-400">
+          {filtered.length} lead{filtered.length !== 1 ? 's' : ''}
+          {activeFilterCount > 0 && ' (filtered)'}
+        </p>
+      )}
 
       {loading ? (
         <p className="text-center text-gray-400 py-10">Loading…</p>

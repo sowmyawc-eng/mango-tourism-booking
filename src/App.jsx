@@ -72,9 +72,9 @@ function AppRoutes() {
           <Protected roles={['accountant']}><AccountantDashboard /></Protected>
         }/>
 
-        {/* Promo Codes */}
+        {/* Promo Codes — admin only */}
         <Route path="/promo-codes" element={
-          <Protected roles={['super_admin','pos_manager']}><PromoCodeManager /></Protected>
+          <Protected roles={['super_admin']}><PromoCodeManager /></Protected>
         }/>
 
         {/* Shared */}

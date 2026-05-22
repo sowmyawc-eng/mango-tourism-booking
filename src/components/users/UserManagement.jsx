@@ -7,6 +7,7 @@ import { createUserWithEmailAndPassword, deleteUser } from 'firebase/auth'
 import { db, secondaryAuth, DOMAIN } from '../../firebase'
 import { useForm } from 'react-hook-form'
 import toast from 'react-hot-toast'
+import { format } from 'date-fns'
 import { Plus, Pencil, Trash2, X, Users, Eye, EyeOff } from 'lucide-react'
 
 const ROLE_BADGE = {
@@ -143,32 +144,57 @@ export default function UserManagement() {
       ) : (
         <div className="card overflow-hidden">
           <div className="divide-y divide-gray-100 dark:divide-gray-700">
-            {users.map(u => (
-              <div key={u.id} className="flex items-center gap-3 px-4 py-3">
-                <div className="w-9 h-9 rounded-full bg-mango-100 flex items-center justify-center flex-shrink-0">
-                  <span className="text-mango-700 font-bold text-sm">
-                    {(u.name?.[0] ?? '?').toUpperCase()}
-                  </span>
+            {users.map(u => {
+              const posName = u.assigned_pos
+                ? posLocs.find(p => p.id === u.assigned_pos)?.pos_name
+                : null
+              return (
+                <div key={u.id} className="flex items-start gap-3 px-4 py-3">
+                  {/* Avatar */}
+                  <div className="w-10 h-10 rounded-full bg-mango-100 flex items-center justify-center flex-shrink-0">
+                    <span className="text-mango-700 font-bold text-sm">
+                      {(u.name?.[0] ?? '?').toUpperCase()}
+                    </span>
+                  </div>
+
+                  {/* Details */}
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <p className="text-sm font-semibold text-gray-800 dark:text-white">{u.name}</p>
+                      <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${ROLE_BADGE[u.role] ?? 'bg-gray-100 text-gray-600'}`}>
+                        {ROLE_LABEL[u.role] ?? u.role}
+                      </span>
+                    </div>
+                    <p className="text-xs text-gray-500 font-mono mt-0.5">@{u.username ?? u.email?.split('@')[0]}</p>
+                    <div className="mt-1 flex flex-wrap gap-x-3 gap-y-0.5">
+                      {u.email && (
+                        <p className="text-xs text-gray-400">✉️ {u.email}</p>
+                      )}
+                      {posName && (
+                        <p className="text-xs text-gray-400">📍 {posName}</p>
+                      )}
+                      {u.created_at?.toDate && (
+                        <p className="text-xs text-gray-400">
+                          Joined {format(u.created_at.toDate(), 'dd MMM yyyy')}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Actions */}
+                  <div className="flex gap-1 flex-shrink-0">
+                    <button onClick={() => openEdit(u)}
+                      className="p-2 text-gray-400 hover:text-mango-600 rounded-lg hover:bg-mango-50">
+                      <Pencil size={15} />
+                    </button>
+                    <button onClick={() => handleDelete(u)}
+                      className="p-2 text-gray-400 hover:text-red-500 rounded-lg hover:bg-red-50">
+                      <Trash2 size={15} />
+                    </button>
+                  </div>
                 </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-semibold text-gray-800 dark:text-white">{u.name}</p>
-                  <p className="text-xs text-gray-400 font-mono">@{u.username ?? u.email?.split('@')[0]}</p>
-                </div>
-                <span className={`text-xs px-2 py-1 rounded-full font-medium hidden sm:block ${ROLE_BADGE[u.role] ?? 'bg-gray-100 text-gray-600'}`}>
-                  {ROLE_LABEL[u.role] ?? u.role}
-                </span>
-                <div className="flex gap-1">
-                  <button onClick={() => openEdit(u)}
-                    className="p-2 text-gray-400 hover:text-mango-600 rounded-lg hover:bg-mango-50">
-                    <Pencil size={15} />
-                  </button>
-                  <button onClick={() => handleDelete(u)}
-                    className="p-2 text-gray-400 hover:text-red-500 rounded-lg hover:bg-red-50">
-                    <Trash2 size={15} />
-                  </button>
-                </div>
-              </div>
-            ))}
+              )
+            })}
           </div>
         </div>
       )}

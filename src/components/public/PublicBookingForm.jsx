@@ -58,8 +58,9 @@ export default function PublicBookingForm() {
   const [receiptName,   setReceiptName]   = useState('')
   const fileInputRef = useRef()
 
-  // Promo selection
-  const [promoType, setPromoType] = useState('')   // '' | 'kid_free' | 'discount_15'
+  // Promo selection — loaded from Firestore
+  const [promoCodes,   setPromoCodes]   = useState([])
+  const [selectedPromo, setSelectedPromo] = useState('')  // promo doc id
 
   const {
     register,
@@ -67,10 +68,19 @@ export default function PublicBookingForm() {
     formState: { errors },
   } = useForm()
 
-  // Load active locations
+  const PROMO_TYPE_LABEL = {
+    kid_free:    '🎁 Kids Offer — 2 Adults = 1 Kid Free',
+    discount_15: '💰 15% Discount on total amount',
+  }
+
+  // Load active locations + active promo codes
   useEffect(() => {
     getDocs(query(collection(db, 'pos_locations'), where('active_status', '==', true)))
       .then(snap => setLocations(snap.docs.map(d => ({ id: d.id, ...d.data() }))))
+      .catch(() => {})
+
+    getDocs(query(collection(db, 'promo_codes'), where('active', '==', true)))
+      .then(snap => setPromoCodes(snap.docs.map(d => ({ id: d.id, ...d.data() }))))
       .catch(() => {})
   }, [])
 
@@ -117,7 +127,8 @@ export default function PublicBookingForm() {
         payment_method: payMethod,
         payment_amount: Number(data.payment_amount),
         receipt_image:  payMethod === 'upi' ? receiptBase64 : null,
-        promo_type:     promoType || null,
+        promo_code:     selectedPromo ? promoCodes.find(p => p.id === selectedPromo)?.code  ?? null : null,
+        promo_type:     selectedPromo ? promoCodes.find(p => p.id === selectedPromo)?.type  ?? null : null,
         payment_status: 'pending',
         ticket_status:  'not_generated',
         booking_source: 'public',
@@ -279,29 +290,32 @@ export default function PublicBookingForm() {
               </div>
             </div>
 
-            {/* Promo offer selection */}
-            <div>
-              <label className="label flex items-center gap-1.5">
-                <Tag size={13} className="text-mango-500" /> Promo Offer
-                <span className="text-xs text-gray-400 font-normal">(optional)</span>
-              </label>
-              <select
-                className="input-field"
-                value={promoType}
-                onChange={e => setPromoType(e.target.value)}
-              >
-                <option value="">No promo offer</option>
-                <option value="kid_free">🎁 Kids Offer — 2 Adults = 1 Kid Free</option>
-                <option value="discount_15">💰 15% Discount on total amount</option>
-              </select>
-              {promoType && (
-                <p className="text-xs text-mango-600 mt-1 font-medium">
-                  {promoType === 'kid_free'
-                    ? '🎁 1 kid entry is free when 2 or more adults book'
-                    : '💰 15% discount has been applied on your total'}
-                </p>
-              )}
-            </div>
+            {/* Promo code selection — loaded from admin */}
+            {promoCodes.length > 0 && (
+              <div>
+                <label className="label flex items-center gap-1.5">
+                  <Tag size={13} className="text-mango-500" /> Promo Code
+                  <span className="text-xs text-gray-400 font-normal">(optional)</span>
+                </label>
+                <select
+                  className="input-field"
+                  value={selectedPromo}
+                  onChange={e => setSelectedPromo(e.target.value)}
+                >
+                  <option value="">No promo code</option>
+                  {promoCodes.map(p => (
+                    <option key={p.id} value={p.id}>
+                      {p.code} — {PROMO_TYPE_LABEL[p.type] ?? p.type}
+                    </option>
+                  ))}
+                </select>
+                {selectedPromo && (
+                  <p className="text-xs text-mango-600 mt-1 font-medium">
+                    ✓ {PROMO_TYPE_LABEL[promoCodes.find(p => p.id === selectedPromo)?.type] ?? ''}
+                  </p>
+                )}
+              </div>
+            )}
           </div>
 
           {/* ── Payment Details ───────────────────────────────────────────── */}
@@ -340,7 +354,7 @@ export default function PublicBookingForm() {
                 <input className="input-field pl-7" type="number" inputMode="numeric" placeholder="500"
                   {...register('payment_amount', { required: 'Required', min: { value: 1, message: 'Enter amount' } })} />
               </div>
-              {promoType && (
+              {selectedPromo && (
                 <p className="text-xs text-green-600 mt-1 font-medium">
                   🎉 Enter the final amount you paid after your promo discount
                 </p>

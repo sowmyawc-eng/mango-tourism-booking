@@ -21,7 +21,6 @@ const NAV = {
     { to: '/bookings',         icon: ClipboardList,   label: 'Bookings'             },
     { to: '/leads',            icon: Users,           label: 'Leads'                },
     { to: '/pos-locations',    icon: MapPin,          label: 'Locations'            },
-    { to: '/promo-codes',      icon: Tag,             label: 'Promo Codes'          },
     { to: '/qr-display',       icon: QrCode,          label: 'Show QR to Customer', external: true },
   ],
   accountant: [
