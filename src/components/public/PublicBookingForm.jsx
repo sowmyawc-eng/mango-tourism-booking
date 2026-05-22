@@ -179,10 +179,10 @@ export default function PublicBookingForm() {
           src="/banner.avif"
           alt="Hanu Reddy Mango Tourism – June 2026"
           className="w-full object-cover"
-          style={{ maxHeight: '180px', objectPosition: 'center' }}
+          style={{ maxHeight: '110px', objectPosition: 'center' }}
         />
       </div>
-      <div className="bg-mango-500 text-white px-4 py-3 text-center">
+      <div className="bg-mango-500 text-white px-4 py-2 text-center">
         <p className="text-mango-100 text-sm font-medium">Festival Experience Booking Form</p>
       </div>
 

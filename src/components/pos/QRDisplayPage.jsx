@@ -68,11 +68,11 @@ export default function QRDisplayPage() {
           src="/banner.avif"
           alt="Hanu Reddy Mango Tourism – June 2026"
           className="w-full object-cover"
-          style={{ maxHeight: '140px', objectPosition: 'center' }}
+          style={{ maxHeight: '100px', objectPosition: 'center' }}
         />
         <button
           onClick={toggleFullscreen}
-          className="absolute top-3 right-3 p-2 bg-black/30 hover:bg-black/50 rounded-xl text-white transition-colors"
+          className="absolute top-2 right-2 p-2 bg-black/30 hover:bg-black/50 rounded-xl text-white transition-colors"
           title="Toggle fullscreen"
         >
           <Maximize2 size={18} />

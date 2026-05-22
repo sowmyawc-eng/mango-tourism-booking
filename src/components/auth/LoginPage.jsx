@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
 import toast from 'react-hot-toast'
-import { Eye, EyeOff, Leaf } from 'lucide-react'
+import { Eye, EyeOff } from 'lucide-react'
 import { useAuth } from '../../contexts/AuthContext'
 
 export default function LoginPage() {
@@ -30,15 +30,14 @@ export default function LoginPage() {
                     bg-gradient-to-br from-mango-50 to-orange-100
                     dark:from-gray-900 dark:to-gray-800 px-4">
 
-      {/* Brand */}
-      <div className="mb-8 flex flex-col items-center gap-3">
-        <div className="w-16 h-16 bg-mango-500 rounded-2xl flex items-center justify-center shadow-lg">
-          <Leaf size={32} className="text-white" />
-        </div>
-        <div className="text-center">
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Hanu Reddy</h1>
-          <p className="text-mango-600 font-semibold text-sm">Mango Tourism</p>
-        </div>
+      {/* Banner */}
+      <div className="mb-6 w-full max-w-sm rounded-2xl overflow-hidden shadow-lg">
+        <img
+          src="/banner.avif"
+          alt="Hanu Reddy Mango Tourism – June 2026"
+          className="w-full object-cover"
+          style={{ maxHeight: '120px', objectPosition: 'center' }}
+        />
       </div>
 
       {/* Card */}
