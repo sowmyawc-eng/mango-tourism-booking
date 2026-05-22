@@ -16,7 +16,11 @@ export default function AccountantDashboard() {
     })
   }, [])
 
-  const pending   = bookings.filter(b => b.payment_status === 'pending')
+  // Accountant must action: UPI pending + cash already approved by POS
+  const pending   = bookings.filter(b =>
+    b.payment_status === 'pending' && b.payment_method !== 'cash' ||
+    b.payment_status === 'pos_approved'
+  )
   const confirmed = bookings.filter(b => b.payment_status === 'confirmed')
   const closed    = bookings.filter(b => b.payment_status === 'closed')
 
@@ -32,7 +36,7 @@ export default function AccountantDashboard() {
         <div className="stat-card items-center text-center">
           <Clock size={18} className="text-yellow-500 mx-auto" />
           <p className="text-2xl font-bold text-yellow-600 mt-1">{loading ? '…' : pending.length}</p>
-          <p className="text-xs text-gray-500">Pending</p>
+          <p className="text-xs text-gray-500">Needs Action</p>
         </div>
         <div className="stat-card items-center text-center">
           <CheckCircle size={18} className="text-green-500 mx-auto" />
@@ -83,8 +87,12 @@ export default function AccountantDashboard() {
                   </p>
                 </div>
                 <div className="text-right flex-shrink-0">
-                  <span className="text-xs px-2 py-1 rounded-full font-medium bg-yellow-100 text-yellow-700">
-                    Pending
+                  <span className={`text-xs px-2 py-1 rounded-full font-medium ${
+                    b.payment_status === 'pos_approved'
+                      ? 'bg-blue-100 text-blue-700'
+                      : 'bg-yellow-100 text-yellow-700'
+                  }`}>
+                    {b.payment_status === 'pos_approved' ? '💵 Cash — POS Approved' : '📱 UPI — Pending'}
                   </span>
                   <p className="text-xs text-gray-400 mt-1">
                     {b.created_at?.toDate ? format(b.created_at.toDate(), 'dd MMM, hh:mm a') : '—'}
