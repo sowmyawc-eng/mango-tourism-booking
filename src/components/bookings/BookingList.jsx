@@ -2,13 +2,20 @@ import { useEffect, useState } from 'react'
 import { collection, getDocs, query, orderBy } from 'firebase/firestore'
 import { db } from '../../firebase'
 import { Link } from 'react-router-dom'
-import { Search, BookOpen, Plus, ChevronRight } from 'lucide-react'
+import { Search, BookOpen, ChevronRight } from 'lucide-react'
 import { format } from 'date-fns'
 
 const STATUS_COLOR = {
-  pending:   'bg-yellow-100 text-yellow-700',
-  confirmed: 'bg-green-100 text-green-700',
-  closed:    'bg-gray-100 text-gray-600',
+  pending:      'bg-yellow-100 text-yellow-700',
+  pos_approved: 'bg-blue-100 text-blue-700',
+  confirmed:    'bg-green-100 text-green-700',
+  closed:       'bg-gray-100 text-gray-600',
+}
+const STATUS_LABEL = {
+  pending:      'Pending',
+  pos_approved: 'POS Approved',
+  confirmed:    'Confirmed',
+  closed:       'Closed',
 }
 
 export default function BookingList() {
@@ -36,9 +43,6 @@ export default function BookingList() {
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <h1 className="page-title">Bookings</h1>
-        <Link to="/bookings/new" className="btn-primary btn-sm flex items-center gap-1.5">
-          <Plus size={15} /> New
-        </Link>
       </div>
 
       {/* Search + filter */}
@@ -55,6 +59,7 @@ export default function BookingList() {
         <select className="input-field w-36" value={statusFilter} onChange={e => setStatus(e.target.value)}>
           <option value="all">All</option>
           <option value="pending">Pending</option>
+          <option value="pos_approved">POS Approved</option>
           <option value="confirmed">Confirmed</option>
           <option value="closed">Closed</option>
         </select>
@@ -69,10 +74,7 @@ export default function BookingList() {
       ) : filtered.length === 0 ? (
         <div className="card p-10 text-center">
           <BookOpen size={40} className="mx-auto text-gray-300 mb-3" />
-          <p className="text-gray-500 mb-4">No bookings found.</p>
-          <Link to="/bookings/new" className="btn-primary inline-flex items-center gap-2">
-            <Plus size={16} /> Create first booking
-          </Link>
+          <p className="text-gray-500">No bookings found.</p>
         </div>
       ) : (
         <div className="card overflow-hidden">
@@ -90,8 +92,8 @@ export default function BookingList() {
                   </p>
                 </div>
                 <div className="flex flex-col items-end gap-1 flex-shrink-0">
-                  <span className={`text-xs px-2 py-0.5 rounded-full font-medium capitalize ${STATUS_COLOR[b.payment_status] ?? 'bg-gray-100 text-gray-600'}`}>
-                    {b.payment_status}
+                  <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${STATUS_COLOR[b.payment_status] ?? 'bg-gray-100 text-gray-600'}`}>
+                    {STATUS_LABEL[b.payment_status] ?? b.payment_status}
                   </span>
                   <p className="text-xs text-gray-400">
                     {b.created_at?.toDate ? format(b.created_at.toDate(), 'dd MMM') : '—'}

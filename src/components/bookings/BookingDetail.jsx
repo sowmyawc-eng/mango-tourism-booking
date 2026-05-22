@@ -2,21 +2,30 @@ import { useEffect, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { doc, getDoc, updateDoc, serverTimestamp } from 'firebase/firestore'
 import { db } from '../../firebase'
+import { useAuth } from '../../contexts/AuthContext'
 import toast from 'react-hot-toast'
 import { format } from 'date-fns'
-import { ArrowLeft, CheckCircle, XCircle } from 'lucide-react'
+import { ArrowLeft, CheckCircle, XCircle, ThumbsUp } from 'lucide-react'
 
 const STATUS_STYLE = {
-  pending:   { bg: 'bg-yellow-100 text-yellow-700 border-yellow-200',  label: 'Pending Verification' },
-  confirmed: { bg: 'bg-green-100 text-green-700 border-green-200',     label: 'Payment Confirmed'    },
-  closed:    { bg: 'bg-gray-100 text-gray-600 border-gray-200',        label: 'Closed'               },
+  pending:      { bg: 'bg-yellow-100 text-yellow-700 border-yellow-200', label: 'Pending'          },
+  pos_approved: { bg: 'bg-blue-100 text-blue-700 border-blue-200',       label: 'POS Approved'     },
+  confirmed:    { bg: 'bg-green-100 text-green-700 border-green-200',     label: 'Payment Confirmed' },
+  closed:       { bg: 'bg-gray-100 text-gray-600 border-gray-200',        label: 'Closed'           },
+}
+
+const PROMO_LABEL = {
+  kid_free:    '🎁 Kids Offer — 2 Adults = 1 Kid Free',
+  discount_15: '💰 15% Discount',
 }
 
 export default function BookingDetail() {
-  const { id }   = useParams()
-  const navigate = useNavigate()
-  const [booking, setBooking]   = useState(null)
-  const [loading, setLoading]   = useState(true)
+  const { id }       = useParams()
+  const navigate     = useNavigate()
+  const { role }     = useAuth()
+
+  const [booking,  setBooking]  = useState(null)
+  const [loading,  setLoading]  = useState(true)
   const [updating, setUpdating] = useState(false)
 
   useEffect(() => {
@@ -31,10 +40,15 @@ export default function BookingDetail() {
     try {
       await updateDoc(doc(db, 'bookings', id), {
         payment_status: newStatus,
-        updated_at: serverTimestamp(),
+        updated_at:     serverTimestamp(),
       })
       setBooking(b => ({ ...b, payment_status: newStatus }))
-      toast.success(newStatus === 'confirmed' ? 'Payment confirmed ✓' : 'Booking closed ✓')
+      const msg = {
+        pos_approved: '✓ Cash payment approved — sent to accountant',
+        confirmed:    '✓ Payment confirmed',
+        closed:       '✓ Booking closed',
+      }[newStatus] ?? 'Updated'
+      toast.success(msg)
     } catch (e) {
       toast.error(e.message)
     } finally {
@@ -45,7 +59,24 @@ export default function BookingDetail() {
   if (loading) return <p className="text-center text-gray-400 py-20">Loading…</p>
   if (!booking) return <p className="text-center text-gray-400 py-20">Booking not found.</p>
 
-  const statusInfo = STATUS_STYLE[booking.payment_status] ?? STATUS_STYLE.pending
+  const statusInfo  = STATUS_STYLE[booking.payment_status] ?? STATUS_STYLE.pending
+  const isCash      = booking.payment_method === 'cash'
+  const status      = booking.payment_status
+
+  // ── What action buttons each role sees ─────────────────────────────────────
+  // POS manager: can only approve cash payments that are still 'pending'
+  const showPosApprove = role === 'pos_manager' && isCash && status === 'pending'
+
+  // Accountant: confirms UPI (pending→confirmed) or cash after POS approved (pos_approved→confirmed)
+  const showConfirm =
+    role === 'accountant' &&
+    (
+      (!isCash && status === 'pending') ||
+      (isCash  && status === 'pos_approved')
+    )
+
+  // Accountant: closes after confirming
+  const showClose = role === 'accountant' && status === 'confirmed'
 
   return (
     <div className="space-y-4 max-w-lg mx-auto">
@@ -74,8 +105,8 @@ export default function BookingDetail() {
           ['Email',         booking.email ?? '—'],
           ['Festival Date', booking.festival_date ?? 'To be confirmed'],
           ['Adults',        booking.adults],
-          ['Kids (4–10)',   booking.kids],
-          ['Booked via',    booking.booking_source === 'public' ? '📱 Public QR Form' : '🏪 POS Staff'],
+          ['Kids (4–10)',   booking.kids ?? 0],
+          ['Booked via',    booking.booking_source === 'public' ? '📱 Public Form' : '🏪 POS Staff'],
           ['Submitted on',  booking.created_at?.toDate
             ? format(booking.created_at.toDate(), 'dd MMM yyyy, hh:mm a')
             : '—'],
@@ -85,10 +116,16 @@ export default function BookingDetail() {
             <span className="font-medium text-gray-800 dark:text-white text-right">{v}</span>
           </div>
         ))}
-        {booking.remarks && (
+
+        {/* Promo offer */}
+        {booking.promo_type && (
           <div className="pt-2 border-t border-gray-100 dark:border-gray-700">
-            <p className="text-xs text-gray-400 mb-1">Remarks</p>
-            <p className="text-sm text-gray-700 dark:text-gray-300">{booking.remarks}</p>
+            <div className="flex items-start justify-between text-sm gap-4">
+              <span className="text-gray-500 flex-shrink-0">Promo Used</span>
+              <span className="font-semibold text-mango-600 text-right">
+                {PROMO_LABEL[booking.promo_type] ?? booking.promo_type}
+              </span>
+            </div>
           </div>
         )}
       </div>
@@ -98,32 +135,20 @@ export default function BookingDetail() {
         <h2 className="section-title mb-1">Payment Details</h2>
 
         <div className="flex items-start justify-between text-sm gap-4">
+          <span className="text-gray-500">Method</span>
+          <span className="font-semibold text-gray-800 dark:text-white">
+            {isCash ? '💵 Cash' : '📱 UPI / Online'}
+          </span>
+        </div>
+
+        <div className="flex items-start justify-between text-sm gap-4">
           <span className="text-gray-500">Amount Paid</span>
           <span className="font-bold text-green-600 text-base">
             {booking.payment_amount ? `₹${booking.payment_amount}` : '—'}
           </span>
         </div>
 
-        {booking.upi_id && (
-          <div className="flex items-start justify-between text-sm gap-4">
-            <span className="text-gray-500 flex-shrink-0">UPI ID</span>
-            <span className="font-mono font-semibold text-gray-800 dark:text-white text-right break-all">
-              {booking.upi_id}
-            </span>
-          </div>
-        )}
-
-        {/* Legacy: show old transaction_id if present */}
-        {booking.transaction_id && !booking.upi_id && (
-          <div className="flex items-start justify-between text-sm gap-4">
-            <span className="text-gray-500 flex-shrink-0">Transaction ID</span>
-            <span className="font-mono font-semibold text-gray-800 dark:text-white text-right break-all">
-              {booking.transaction_id}
-            </span>
-          </div>
-        )}
-
-        {/* Receipt image */}
+        {/* Receipt image (UPI only) */}
         {booking.receipt_image && (
           <div className="pt-2">
             <p className="text-xs text-gray-400 mb-2">Payment Receipt</p>
@@ -135,44 +160,84 @@ export default function BookingDetail() {
           </div>
         )}
 
-        <div className="mt-2 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-xl">
-          <p className="text-xs text-blue-600 font-medium">
-            💡 Verify the receipt and UPI ID in your UPI app or bank statement before confirming payment.
-          </p>
-        </div>
-      </div>
-
-      {/* Accountant Actions */}
-      <div className="space-y-2">
-        {booking.payment_status === 'pending' && (
-          <button
-            onClick={() => updateStatus('confirmed')}
-            disabled={updating}
-            className="btn-primary w-full py-4 text-base flex items-center justify-center gap-2"
-          >
-            <CheckCircle size={20} />
-            {updating ? 'Confirming…' : 'Confirm Payment'}
-          </button>
+        {/* Verification hint for accountant */}
+        {role === 'accountant' && !isCash && (
+          <div className="p-3 bg-blue-50 dark:bg-blue-900/20 rounded-xl">
+            <p className="text-xs text-blue-600 font-medium">
+              💡 Verify the receipt screenshot in your UPI app or bank statement before confirming.
+            </p>
+          </div>
         )}
 
-        {booking.payment_status === 'confirmed' && (
-          <button
-            onClick={() => updateStatus('closed')}
-            disabled={updating}
-            className="w-full py-4 text-base flex items-center justify-center gap-2
-                       bg-gray-700 hover:bg-gray-800 text-white font-semibold rounded-xl transition-colors"
-          >
-            <XCircle size={20} />
-            {updating ? 'Closing…' : 'Close Booking'}
-          </button>
-        )}
-
-        {booking.payment_status === 'closed' && (
-          <div className="card p-4 text-center bg-gray-50 dark:bg-gray-700">
-            <p className="text-sm font-semibold text-gray-500">✓ This booking is closed</p>
+        {/* Cash pending POS approval note */}
+        {isCash && status === 'pending' && role === 'accountant' && (
+          <div className="p-3 bg-amber-50 border border-amber-200 rounded-xl">
+            <p className="text-xs text-amber-700 font-medium">
+              ⏳ Waiting for POS manager to approve this cash payment before you can confirm.
+            </p>
           </div>
         )}
       </div>
+
+      {/* ── Action Buttons ─────────────────────────────────────────────────── */}
+
+      {/* POS: approve cash */}
+      {showPosApprove && (
+        <button
+          onClick={() => updateStatus('pos_approved')}
+          disabled={updating}
+          className="btn-primary w-full py-4 text-base flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700"
+        >
+          <ThumbsUp size={20} />
+          {updating ? 'Approving…' : 'Approve Cash Payment'}
+        </button>
+      )}
+
+      {/* Accountant: confirm payment */}
+      {showConfirm && (
+        <button
+          onClick={() => updateStatus('confirmed')}
+          disabled={updating}
+          className="btn-primary w-full py-4 text-base flex items-center justify-center gap-2"
+        >
+          <CheckCircle size={20} />
+          {updating ? 'Confirming…' : 'Confirm Payment'}
+        </button>
+      )}
+
+      {/* Accountant: close booking */}
+      {showClose && (
+        <button
+          onClick={() => updateStatus('closed')}
+          disabled={updating}
+          className="w-full py-4 text-base flex items-center justify-center gap-2
+                     bg-gray-700 hover:bg-gray-800 text-white font-semibold rounded-xl transition-colors"
+        >
+          <XCircle size={20} />
+          {updating ? 'Closing…' : 'Close Booking'}
+        </button>
+      )}
+
+      {/* Closed state */}
+      {status === 'closed' && (
+        <div className="card p-4 text-center bg-gray-50 dark:bg-gray-700">
+          <p className="text-sm font-semibold text-gray-500">✓ This booking is closed</p>
+        </div>
+      )}
+
+      {/* POS: waiting message after approval */}
+      {role === 'pos_manager' && isCash && status === 'pos_approved' && (
+        <div className="card p-4 text-center bg-blue-50 border border-blue-200">
+          <p className="text-sm font-semibold text-blue-600">✓ Approved — pending accountant confirmation</p>
+        </div>
+      )}
+
+      {/* POS: UPI bookings — no action */}
+      {role === 'pos_manager' && !isCash && (
+        <div className="card p-4 text-center bg-gray-50 dark:bg-gray-700">
+          <p className="text-sm text-gray-500">UPI payment verification is handled by the accountant.</p>
+        </div>
+      )}
 
     </div>
   )

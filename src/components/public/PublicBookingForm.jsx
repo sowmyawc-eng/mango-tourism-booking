@@ -1,12 +1,12 @@
 import { useEffect, useRef, useState } from 'react'
 import {
-  collection, addDoc, getDocs, getDoc,
-  query, where, doc, serverTimestamp, increment, updateDoc
+  collection, addDoc, getDocs,
+  query, where, serverTimestamp
 } from 'firebase/firestore'
 import { db } from '../../firebase'
 import { useForm } from 'react-hook-form'
 import { generateBookingId } from '../../utils/generateId'
-import { Leaf, PartyPopper, Upload, X, Image, Tag, CheckCircle, XCircle } from 'lucide-react'
+import { Leaf, PartyPopper, Upload, X, Image, Tag } from 'lucide-react'
 import toast from 'react-hot-toast'
 
 // ── Fixed festival dates ─────────────────────────────────────────────────────
@@ -43,20 +43,6 @@ async function compressImage(file, maxWidth = 900, quality = 0.75) {
   })
 }
 
-// ── Promo benefit helpers ────────────────────────────────────────────────────
-function getPromoBenefit(promo, adults, kids) {
-  if (!promo) return null
-  if (promo.type === 'discount_15') {
-    return { label: '15% discount applied on your total', tag: '15% OFF' }
-  }
-  if (promo.type === 'kid_free') {
-    if (Number(adults) >= 2) {
-      return { label: '1 kid entry is FREE with 2+ adults', tag: '1 Kid Free' }
-    }
-    return { label: 'This offer requires at least 2 adults', tag: null, invalid: true }
-  }
-  return null
-}
 
 export default function PublicBookingForm() {
   const [locations,     setLocations]     = useState([])
@@ -72,19 +58,14 @@ export default function PublicBookingForm() {
   const [receiptName,   setReceiptName]   = useState('')
   const fileInputRef = useRef()
 
-  // Promo code
-  const [promoInput,   setPromoInput]   = useState('')
-  const [promoStatus,  setPromoStatus]  = useState(null)   // null | 'checking' | 'valid' | 'invalid'
-  const [promoData,    setPromoData]    = useState(null)   // promo document
+  // Promo selection
+  const [promoType, setPromoType] = useState('')   // '' | 'kid_free' | 'discount_15'
 
   const {
     register,
     handleSubmit,
-    watch,
     formState: { errors },
   } = useForm()
-
-  const adultsVal = watch('adults', 1)
 
   // Load active locations
   useEffect(() => {
@@ -113,42 +94,6 @@ export default function PublicBookingForm() {
     if (fileInputRef.current) fileInputRef.current.value = ''
   }
 
-  // ── Promo code validation ──────────────────────────────────────────────────
-  async function validatePromo() {
-    const code = promoInput.trim().toUpperCase()
-    if (!code) return
-    setPromoStatus('checking')
-    setPromoData(null)
-    try {
-      const snap = await getDocs(
-        query(collection(db, 'promo_codes'), where('code', '==', code))
-      )
-      if (snap.empty) {
-        setPromoStatus('invalid')
-        toast.error('Promo code not found')
-        return
-      }
-      const promo = { id: snap.docs[0].id, ...snap.docs[0].data() }
-      if (!promo.active) {
-        setPromoStatus('invalid')
-        toast.error('This promo code is not currently active')
-        return
-      }
-      setPromoData(promo)
-      setPromoStatus('valid')
-      toast.success('Promo code applied!')
-    } catch {
-      setPromoStatus(null)
-      toast.error('Could not validate code. Try again.')
-    }
-  }
-
-  function clearPromo() {
-    setPromoInput('')
-    setPromoStatus(null)
-    setPromoData(null)
-  }
-
   // ── Submit ─────────────────────────────────────────────────────────────────
   async function onSubmit(data) {
     if (payMethod === 'upi' && !receiptBase64) {
@@ -170,22 +115,15 @@ export default function PublicBookingForm() {
         adults:         Number(data.adults),
         kids:           Number(data.kids ?? 0),
         payment_method: payMethod,
-        upi_id:         payMethod === 'upi' ? (data.upi_id?.trim() ?? null) : null,
         payment_amount: Number(data.payment_amount),
         receipt_image:  payMethod === 'upi' ? receiptBase64 : null,
-        promo_code:     promoData?.code    ?? null,
-        promo_type:     promoData?.type    ?? null,
+        promo_type:     promoType || null,
         payment_status: 'pending',
         ticket_status:  'not_generated',
         booking_source: 'public',
         pos_location:   data.pos_location || null,
         created_at:     serverTimestamp(),
       })
-
-      // Increment promo use count
-      if (promoData?.id) {
-        await updateDoc(doc(db, 'promo_codes', promoData.id), { use_count: increment(1) })
-      }
 
       setBookingRef(bookingId)
       setSubmitted(true)
@@ -197,9 +135,6 @@ export default function PublicBookingForm() {
       setSaving(false)
     }
   }
-
-  // ── Promo benefit display ──────────────────────────────────────────────────
-  const promoBenefit = getPromoBenefit(promoData, adultsVal, watch('kids'))
 
   /* ── Success screen ─────────────────────────────────────────────────────── */
   if (submitted) {
@@ -344,52 +279,26 @@ export default function PublicBookingForm() {
               </div>
             </div>
 
-            {/* Promo code */}
+            {/* Promo offer selection */}
             <div>
               <label className="label flex items-center gap-1.5">
-                <Tag size={13} className="text-mango-500" /> Promo Code
+                <Tag size={13} className="text-mango-500" /> Promo Offer
                 <span className="text-xs text-gray-400 font-normal">(optional)</span>
               </label>
-
-              {promoStatus !== 'valid' ? (
-                <div className="flex gap-2">
-                  <input
-                    className="input-field flex-1 uppercase font-mono tracking-wider"
-                    placeholder="Enter code e.g. KIDFREE-AB12"
-                    value={promoInput}
-                    onChange={e => { setPromoInput(e.target.value.toUpperCase()); setPromoStatus(null) }}
-                    autoCapitalize="characters"
-                    autoCorrect="off"
-                  />
-                  <button
-                    type="button"
-                    onClick={validatePromo}
-                    disabled={!promoInput.trim() || promoStatus === 'checking'}
-                    className="btn-primary btn-sm px-4 flex-shrink-0"
-                  >
-                    {promoStatus === 'checking' ? '…' : 'Apply'}
-                  </button>
-                </div>
-              ) : (
-                <div className="flex items-center gap-2 bg-green-50 border border-green-200 rounded-xl px-3 py-2.5">
-                  <CheckCircle size={16} className="text-green-500 flex-shrink-0" />
-                  <div className="flex-1">
-                    <p className="text-sm font-bold font-mono text-green-700">{promoData.code}</p>
-                    {promoBenefit && (
-                      <p className={`text-xs mt-0.5 ${promoBenefit.invalid ? 'text-red-500' : 'text-green-600'}`}>
-                        {promoBenefit.label}
-                      </p>
-                    )}
-                  </div>
-                  <button type="button" onClick={clearPromo} className="p-1 text-gray-400 hover:text-red-500">
-                    <X size={14} />
-                  </button>
-                </div>
-              )}
-
-              {promoStatus === 'invalid' && (
-                <p className="text-red-500 text-xs mt-1 flex items-center gap-1">
-                  <XCircle size={12} /> Invalid or inactive promo code
+              <select
+                className="input-field"
+                value={promoType}
+                onChange={e => setPromoType(e.target.value)}
+              >
+                <option value="">No promo offer</option>
+                <option value="kid_free">🎁 Kids Offer — 2 Adults = 1 Kid Free</option>
+                <option value="discount_15">💰 15% Discount on total amount</option>
+              </select>
+              {promoType && (
+                <p className="text-xs text-mango-600 mt-1 font-medium">
+                  {promoType === 'kid_free'
+                    ? '🎁 1 kid entry is free when 2 or more adults book'
+                    : '💰 15% discount has been applied on your total'}
                 </p>
               )}
             </div>
@@ -431,9 +340,9 @@ export default function PublicBookingForm() {
                 <input className="input-field pl-7" type="number" inputMode="numeric" placeholder="500"
                   {...register('payment_amount', { required: 'Required', min: { value: 1, message: 'Enter amount' } })} />
               </div>
-              {promoBenefit && !promoBenefit.invalid && (
+              {promoType && (
                 <p className="text-xs text-green-600 mt-1 font-medium">
-                  🎉 {promoBenefit.tag} — enter the discounted amount you paid
+                  🎉 Enter the final amount you paid after your promo discount
                 </p>
               )}
               {errors.payment_amount && <p className="text-red-500 text-xs mt-1">{errors.payment_amount.message}</p>}
@@ -442,18 +351,6 @@ export default function PublicBookingForm() {
             {/* UPI-only fields */}
             {payMethod === 'upi' && (
               <>
-                {/* UPI ID */}
-                <div>
-                  <label className="label">UPI ID used for payment <span className="text-red-500">*</span></label>
-                  <input
-                    className="input-field font-mono"
-                    placeholder="example@upi  or  9876543210@paytm"
-                    autoCapitalize="none" autoCorrect="off"
-                    {...register('upi_id', { required: payMethod === 'upi' ? 'Required for UPI payment' : false })} />
-                  <p className="text-xs text-gray-400 mt-1">Enter the UPI ID or number you paid from</p>
-                  {errors.upi_id && <p className="text-red-500 text-xs mt-1">{errors.upi_id.message}</p>}
-                </div>
-
                 {/* Receipt upload */}
                 <div>
                   <label className="label">Payment Receipt Screenshot <span className="text-red-500">*</span></label>

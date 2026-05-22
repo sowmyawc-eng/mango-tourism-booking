@@ -80,7 +80,7 @@ function AppRoutes() {
         {/* Shared */}
         <Route path="/leads"       element={<Protected roles={['super_admin','pos_manager']}><LeadList /></Protected>}/>
         <Route path="/bookings"    element={<Protected roles={['super_admin','pos_manager','accountant']}><BookingList /></Protected>}/>
-        <Route path="/bookings/new" element={<Protected roles={['super_admin','pos_manager']}><BookingForm /></Protected>}/>
+        {/* /bookings/new is disabled — all bookings come from the public /book form */}
         <Route path="/bookings/:id" element={<Protected roles={['super_admin','pos_manager','accountant']}><BookingDetail /></Protected>}/>
       </Route>
 

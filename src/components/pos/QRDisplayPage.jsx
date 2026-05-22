@@ -106,20 +106,8 @@ export default function QRDisplayPage() {
             </div>
           </div>
 
-          {/* Location name */}
-          <div className="bg-mango-50 rounded-2xl px-4 py-3 mb-4">
-            <p className="text-xs text-mango-500 font-semibold uppercase tracking-wide mb-0.5">
-              📍 This Stall Location
-            </p>
-            <p className="text-mango-800 font-bold text-base">{loc.pos_name}</p>
-            {loc.address && (
-              <p className="text-mango-600 text-xs mt-0.5">{loc.address}</p>
-            )}
-          </div>
-
-          {/* URL hint */}
-          <p className="text-xs text-gray-400 font-mono break-all">
-            {bookUrl}
+          <p className="text-sm font-semibold text-mango-600">
+            🥭 Hanu Reddy Mango Festival 2026
           </p>
         </div>
 

@@ -18,8 +18,7 @@ const NAV = {
   ],
   pos_manager: [
     { to: '/pos/dashboard',    icon: LayoutDashboard, label: 'Dashboard'            },
-    { to: '/bookings/new',     icon: BookOpen,        label: 'New Booking'          },
-    { to: '/bookings',         icon: ClipboardList,   label: 'My Bookings'          },
+    { to: '/bookings',         icon: ClipboardList,   label: 'Bookings'             },
     { to: '/leads',            icon: Users,           label: 'Leads'                },
     { to: '/pos-locations',    icon: MapPin,          label: 'Locations'            },
     { to: '/promo-codes',      icon: Tag,             label: 'Promo Codes'          },
