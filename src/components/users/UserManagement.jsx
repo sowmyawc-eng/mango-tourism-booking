@@ -187,7 +187,7 @@ export default function UserManagement() {
             <form onSubmit={handleSubmit(onSubmit)} className="space-y-3">
               <div>
                 <label className="label">Full Name <span className="text-red-500">*</span></label>
-                <input className="input-field" placeholder="Sowmya Reddy"
+                <input className="input-field" placeholder="Priya Lakshmi"
                   {...register('name', R)} />
                 {errors.name && <p className="text-red-500 text-xs mt-1">{errors.name.message}</p>}
               </div>
@@ -197,7 +197,7 @@ export default function UserManagement() {
                   <div>
                     <label className="label">Username <span className="text-red-500">*</span></label>
                     <div className="flex items-center gap-2">
-                      <input className="input-field" placeholder="sowmyawc"
+                      <input className="input-field" placeholder="priyalakshmi"
                         autoCapitalize="none" autoCorrect="off"
                         {...register('username', {
                           required: 'Required',

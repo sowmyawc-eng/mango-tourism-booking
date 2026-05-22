@@ -181,14 +181,14 @@ export default function PublicBookingForm() {
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <label className="label">First Name <span className="text-red-500">*</span></label>
-                <input className="input-field" placeholder="Ravi"
+                <input className="input-field" placeholder="Venkatesh"
                   autoComplete="given-name"
                   {...register('firstname', { required: 'Required' })} />
                 {errors.firstname && <p className="text-red-500 text-xs mt-1">{errors.firstname.message}</p>}
               </div>
               <div>
                 <label className="label">Last Name <span className="text-red-500">*</span></label>
-                <input className="input-field" placeholder="Kumar"
+                <input className="input-field" placeholder="Reddy"
                   autoComplete="family-name"
                   {...register('lastname', { required: 'Required' })} />
                 {errors.lastname && <p className="text-red-500 text-xs mt-1">{errors.lastname.message}</p>}
@@ -219,7 +219,7 @@ export default function PublicBookingForm() {
               <label className="label">Email ID <span className="text-red-500">*</span></label>
               <input
                 className="input-field" type="email" inputMode="email"
-                placeholder="ravi@example.com" autoComplete="email"
+                placeholder="venkatesh@gmail.com" autoComplete="email"
                 {...register('email', {
                   required: 'Required',
                   pattern: { value: /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/, message: 'Enter a valid email address' },

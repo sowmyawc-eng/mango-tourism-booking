@@ -55,7 +55,7 @@ export default function LoginPage() {
             <label className="label">Username</label>
             <input
               className="input-field"
-              placeholder="e.g. sowmyawc"
+              placeholder="e.g. rajeshkumar"
               autoCapitalize="none"
               autoCorrect="off"
               {...register('username', { required: 'Username is required' })}
@@ -94,7 +94,7 @@ export default function LoginPage() {
         </form>
       </div>
 
-      <p className="mt-6 text-xs text-gray-400">© 2024 Hanu Reddy Mango Tourism · hrmt.store</p>
+      <p className="mt-6 text-xs text-gray-400">© 2026 Hanu Reddy Mango Tourism · hrmt.store</p>
     </div>
   )
 }
