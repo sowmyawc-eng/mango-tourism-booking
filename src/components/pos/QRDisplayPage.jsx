@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { collection, getDocs } from 'firebase/firestore'
 import { db } from '../../firebase'
 import { QRCodeCanvas } from 'qrcode.react'
-import { Leaf, ChevronLeft, ChevronRight, Maximize2 } from 'lucide-react'
+import { ChevronLeft, ChevronRight, Maximize2 } from 'lucide-react'
 
 const APP_URL = import.meta.env.VITE_APP_URL || window.location.origin
 
@@ -62,20 +62,17 @@ export default function QRDisplayPage() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-mango-400 to-orange-500 flex flex-col">
 
-      {/* Top bar */}
-      <div className="flex items-center justify-between px-6 pt-6 pb-2">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center">
-            <Leaf size={20} className="text-white" />
-          </div>
-          <div>
-            <p className="text-white font-bold text-sm leading-tight">Hanu Reddy Mango Tourism</p>
-            <p className="text-mango-100 text-xs">Festival Experience</p>
-          </div>
-        </div>
+      {/* Banner + fullscreen button */}
+      <div className="relative">
+        <img
+          src="/banner.avif"
+          alt="Hanu Reddy Mango Tourism – June 2026"
+          className="w-full object-cover"
+          style={{ maxHeight: '140px', objectPosition: 'center' }}
+        />
         <button
           onClick={toggleFullscreen}
-          className="p-2 bg-white/20 hover:bg-white/30 rounded-xl text-white transition-colors"
+          className="absolute top-3 right-3 p-2 bg-black/30 hover:bg-black/50 rounded-xl text-white transition-colors"
           title="Toggle fullscreen"
         >
           <Maximize2 size={18} />

@@ -173,13 +173,17 @@ export default function PublicBookingForm() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-mango-50 to-orange-100 pb-12">
 
-      {/* Header */}
-      <div className="bg-mango-500 text-white px-4 pt-12 pb-8 text-center">
-        <div className="w-12 h-12 bg-white/20 rounded-2xl flex items-center justify-center mx-auto mb-3">
-          <Leaf size={24} />
-        </div>
-        <h1 className="text-xl font-bold">Hanu Reddy Mango Tourism</h1>
-        <p className="text-mango-100 text-sm mt-1">Festival Experience Booking Form</p>
+      {/* Banner */}
+      <div className="w-full">
+        <img
+          src="/banner.avif"
+          alt="Hanu Reddy Mango Tourism – June 2026"
+          className="w-full object-cover"
+          style={{ maxHeight: '180px', objectPosition: 'center' }}
+        />
+      </div>
+      <div className="bg-mango-500 text-white px-4 py-3 text-center">
+        <p className="text-mango-100 text-sm font-medium">Festival Experience Booking Form</p>
       </div>
 
       <div className="px-4 -mt-4 max-w-lg mx-auto">
