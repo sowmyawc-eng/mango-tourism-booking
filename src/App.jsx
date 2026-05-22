@@ -17,6 +17,7 @@ import BookingForm          from './components/bookings/BookingForm'
 import BookingDetail        from './components/bookings/BookingDetail'
 import UserManagement       from './components/users/UserManagement'
 import POSLocations         from './components/pos/POSLocations'
+import PromoCodeManager     from './components/pos/PromoCodeManager'
 
 // ── Redirect to correct dashboard based on role ──────────────────────
 function DashboardRedirect() {
@@ -69,6 +70,11 @@ function AppRoutes() {
         {/* Accountant only */}
         <Route path="/accountant/dashboard" element={
           <Protected roles={['accountant']}><AccountantDashboard /></Protected>
+        }/>
+
+        {/* Promo Codes */}
+        <Route path="/promo-codes" element={
+          <Protected roles={['super_admin','pos_manager']}><PromoCodeManager /></Protected>
         }/>
 
         {/* Shared */}

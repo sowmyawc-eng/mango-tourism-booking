@@ -1,25 +1,28 @@
 import { NavLink } from 'react-router-dom'
 import {
   LayoutDashboard, Users, MapPin, ClipboardList,
-  BookOpen, Leaf, LogOut, X, CheckSquare, QrCode, UserCog
+  BookOpen, Leaf, LogOut, X, CheckSquare, QrCode, UserCog, Tag
 } from 'lucide-react'
 import { useAuth } from '../../contexts/AuthContext'
 import toast from 'react-hot-toast'
 
 const NAV = {
   super_admin: [
-    { to: '/admin/dashboard',  icon: LayoutDashboard, label: 'Dashboard'       },
-    { to: '/bookings',         icon: BookOpen,        label: 'All Bookings'    },
-    { to: '/leads',            icon: ClipboardList,   label: 'Leads'           },
-    { to: '/pos-locations',    icon: MapPin,          label: 'POS Locations'   },
-    { to: '/users',            icon: UserCog,         label: 'User Management' },
+    { to: '/admin/dashboard',  icon: LayoutDashboard, label: 'Dashboard'            },
+    { to: '/bookings',         icon: BookOpen,        label: 'All Bookings'         },
+    { to: '/leads',            icon: ClipboardList,   label: 'Leads'                },
+    { to: '/pos-locations',    icon: MapPin,          label: 'POS Locations'        },
+    { to: '/promo-codes',      icon: Tag,             label: 'Promo Codes'          },
+    { to: '/users',            icon: UserCog,         label: 'User Management'      },
     { to: '/qr-display',       icon: QrCode,          label: 'Show QR to Customer', external: true },
   ],
   pos_manager: [
-    { to: '/pos/dashboard',    icon: LayoutDashboard, label: 'Dashboard'       },
-    { to: '/bookings/new',     icon: BookOpen,        label: 'New Booking'     },
-    { to: '/bookings',         icon: ClipboardList,   label: 'My Bookings'     },
-    { to: '/leads',            icon: Users,           label: 'Leads'           },
+    { to: '/pos/dashboard',    icon: LayoutDashboard, label: 'Dashboard'            },
+    { to: '/bookings/new',     icon: BookOpen,        label: 'New Booking'          },
+    { to: '/bookings',         icon: ClipboardList,   label: 'My Bookings'          },
+    { to: '/leads',            icon: Users,           label: 'Leads'                },
+    { to: '/pos-locations',    icon: MapPin,          label: 'Locations'            },
+    { to: '/promo-codes',      icon: Tag,             label: 'Promo Codes'          },
     { to: '/qr-display',       icon: QrCode,          label: 'Show QR to Customer', external: true },
   ],
   accountant: [
