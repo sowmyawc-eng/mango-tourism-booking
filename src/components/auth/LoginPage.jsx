@@ -28,19 +28,23 @@ export default function LoginPage() {
   return (
     <div className="min-h-screen flex flex-col items-center justify-center
                     bg-gradient-to-br from-mango-50 to-orange-100
-                    dark:from-gray-900 dark:to-gray-800 px-4">
+                    dark:from-gray-900 dark:to-gray-800 px-4 py-8">
 
-      {/* Banner */}
-      <div className="mb-6 w-full max-w-sm rounded-2xl overflow-hidden shadow-lg">
+      {/* Banner — natural aspect ratio, no cropping */}
+      <div className="w-full max-w-sm rounded-2xl overflow-hidden shadow-xl mb-2">
         <img
           src="/banner.avif"
           alt="Hanu Reddy Mango Tourism – June 2026"
-          className="w-full object-cover"
-          style={{ maxHeight: '120px', objectPosition: 'center' }}
+          className="w-full h-auto block"
         />
       </div>
 
-      {/* Card */}
+      {/* App subtitle */}
+      <p className="text-xs font-semibold text-mango-700 dark:text-mango-400 tracking-wide uppercase mb-5">
+        Smart Booking &amp; POS Management
+      </p>
+
+      {/* Login card */}
       <div className="card w-full max-w-sm p-6">
         <h2 className="text-lg font-bold text-gray-800 dark:text-white mb-1">Staff Login</h2>
         <p className="text-sm text-gray-500 dark:text-gray-400 mb-6">

@@ -60,8 +60,8 @@ export default function Sidebar({ isOpen, onClose }) {
             <Leaf size={20} className="text-white" />
           </div>
           <div>
-            <p className="text-sm font-bold text-gray-900 dark:text-white leading-tight">Hanu Reddy</p>
-            <p className="text-xs text-mango-600 font-semibold">Mango Tourism</p>
+            <p className="text-sm font-bold text-gray-900 dark:text-white leading-tight">Hanu Reddy Mango Tourism</p>
+            <p className="text-xs text-mango-600 font-medium leading-tight">Smart Booking &amp; POS</p>
           </div>
         </div>
         <button onClick={onClose} className="lg:hidden text-gray-400 hover:text-gray-600 p-1">
