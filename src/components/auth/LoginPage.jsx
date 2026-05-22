@@ -8,30 +8,29 @@ import { useAuth } from '../../contexts/AuthContext'
 export default function LoginPage() {
   const { login } = useAuth()
   const navigate  = useNavigate()
-  const [showPw, setShowPw] = useState(false)
+  const [showPw, setShowPw]   = useState(false)
   const [loading, setLoading] = useState(false)
 
   const { register, handleSubmit, formState: { errors } } = useForm()
 
-  async function onSubmit({ email, password }) {
+  async function onSubmit({ username, password }) {
     setLoading(true)
     try {
-      await login(email, password)
+      await login(username.trim(), password)
       navigate('/dashboard')
     } catch (err) {
-      const msg = err.code === 'auth/invalid-credential'
-        ? 'Invalid email or password.'
-        : 'Login failed. Please try again.'
-      toast.error(msg)
+      toast.error('Invalid username or password. Please try again.')
     } finally {
       setLoading(false)
     }
   }
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-br from-mango-50 to-orange-100 dark:from-gray-900 dark:to-gray-800 px-4">
+    <div className="min-h-screen flex flex-col items-center justify-center
+                    bg-gradient-to-br from-mango-50 to-orange-100
+                    dark:from-gray-900 dark:to-gray-800 px-4">
 
-      {/* Logo / Brand */}
+      {/* Brand */}
       <div className="mb-8 flex flex-col items-center gap-3">
         <div className="w-16 h-16 bg-mango-500 rounded-2xl flex items-center justify-center shadow-lg">
           <Leaf size={32} className="text-white" />
@@ -44,23 +43,26 @@ export default function LoginPage() {
 
       {/* Card */}
       <div className="card w-full max-w-sm p-6">
-        <h2 className="text-lg font-bold text-gray-800 dark:text-white mb-1">Admin Login</h2>
-        <p className="text-sm text-gray-500 dark:text-gray-400 mb-6">Sign in to manage bookings &amp; leads</p>
+        <h2 className="text-lg font-bold text-gray-800 dark:text-white mb-1">Staff Login</h2>
+        <p className="text-sm text-gray-500 dark:text-gray-400 mb-6">
+          Sign in with your username and password
+        </p>
 
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-          {/* Email */}
+
+          {/* Username */}
           <div>
-            <label className="label">Email address</label>
+            <label className="label">Username</label>
             <input
-              type="email"
-              placeholder="admin@example.com"
               className="input-field"
-              {...register('email', {
-                required: 'Email is required',
-                pattern: { value: /^\S+@\S+\.\S+$/, message: 'Invalid email' }
-              })}
+              placeholder="e.g. sowmyawc"
+              autoCapitalize="none"
+              autoCorrect="off"
+              {...register('username', { required: 'Username is required' })}
             />
-            {errors.email && <p className="text-red-500 text-xs mt-1">{errors.email.message}</p>}
+            {errors.username && (
+              <p className="text-red-500 text-xs mt-1">{errors.username.message}</p>
+            )}
           </div>
 
           {/* Password */}
@@ -69,8 +71,8 @@ export default function LoginPage() {
             <div className="relative">
               <input
                 type={showPw ? 'text' : 'password'}
-                placeholder="••••••••"
                 className="input-field pr-10"
+                placeholder="••••••••"
                 {...register('password', { required: 'Password is required' })}
               />
               <button
@@ -81,7 +83,9 @@ export default function LoginPage() {
                 {showPw ? <EyeOff size={16} /> : <Eye size={16} />}
               </button>
             </div>
-            {errors.password && <p className="text-red-500 text-xs mt-1">{errors.password.message}</p>}
+            {errors.password && (
+              <p className="text-red-500 text-xs mt-1">{errors.password.message}</p>
+            )}
           </div>
 
           <button type="submit" disabled={loading} className="btn-primary w-full mt-2">
@@ -90,7 +94,7 @@ export default function LoginPage() {
         </form>
       </div>
 
-      <p className="mt-6 text-xs text-gray-400">© 2024 Hanu Reddy Mango Tourism</p>
+      <p className="mt-6 text-xs text-gray-400">© 2024 Hanu Reddy Mango Tourism · hrmt.store</p>
     </div>
   )
 }

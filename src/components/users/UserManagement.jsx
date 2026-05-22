@@ -1,23 +1,37 @@
 import { useEffect, useState } from 'react'
 import {
-  collection, getDocs, addDoc, updateDoc,
+  collection, getDocs, updateDoc,
   deleteDoc, doc, serverTimestamp, setDoc
 } from 'firebase/firestore'
-import { db } from '../../firebase'
+import { createUserWithEmailAndPassword, deleteUser } from 'firebase/auth'
+import { db, secondaryAuth, DOMAIN } from '../../firebase'
 import { useForm } from 'react-hook-form'
 import toast from 'react-hot-toast'
-import { Plus, Pencil, Trash2, X, Users } from 'lucide-react'
+import { Plus, Pencil, Trash2, X, Users, Eye, EyeOff } from 'lucide-react'
+
+const ROLE_BADGE = {
+  super_admin: 'bg-orange-100 text-orange-700',
+  pos_manager: 'bg-blue-100 text-blue-700',
+  accountant:  'bg-purple-100 text-purple-700',
+}
+
+const ROLE_LABEL = {
+  super_admin: 'Super Admin',
+  pos_manager: 'POS Manager',
+  accountant:  'Accountant',
+}
 
 export default function UserManagement() {
-  const [users, setUsers]     = useState([])
-  const [posLocs, setPosLocs] = useState([])
-  const [loading, setLoading] = useState(true)
+  const [users,     setUsers]     = useState([])
+  const [posLocs,   setPosLocs]   = useState([])
+  const [loading,   setLoading]   = useState(true)
   const [showModal, setShowModal] = useState(false)
-  const [editing, setEditing] = useState(null)
+  const [editing,   setEditing]   = useState(null)
+  const [showPw,    setShowPw]    = useState(false)
+  const [saving,    setSaving]    = useState(false)
 
   const { register, handleSubmit, reset, watch, formState: { errors } } = useForm()
   const roleVal = watch('role')
-
   const R = { required: 'This field is required' }
 
   async function loadData() {
@@ -29,55 +43,94 @@ export default function UserManagement() {
     setPosLocs(pSnap.docs.map(d => ({ id: d.id, ...d.data() })))
     setLoading(false)
   }
-
   useEffect(() => { loadData() }, [])
 
-  function openCreate() { setEditing(null); reset({}); setShowModal(true) }
-  function openEdit(u)  { setEditing(u); reset(u);    setShowModal(true) }
+  function openCreate() { setEditing(null); reset({}); setShowPw(false); setShowModal(true) }
+  function openEdit(u)  { setEditing(u);   reset(u);   setShowPw(false); setShowModal(true) }
 
   async function onSubmit(data) {
+    setSaving(true)
     try {
-      const payload = {
-        name:         data.name,
-        email:        data.email,
-        role:         data.role,
-        assigned_pos: data.assigned_pos || null,
-        phone:        data.phone || null,
-      }
+      const email = `${data.username.trim().toLowerCase()}@${DOMAIN}`
+
       if (editing) {
-        await updateDoc(doc(db, 'users', editing.id), { ...payload, updated_at: serverTimestamp() })
+        // Update Firestore profile only
+        await updateDoc(doc(db, 'users', editing.id), {
+          name:         data.name,
+          role:         data.role,
+          assigned_pos: data.assigned_pos || null,
+          updated_at:   serverTimestamp(),
+        })
         toast.success('User updated')
       } else {
-        await addDoc(collection(db, 'users'), { ...payload, created_at: serverTimestamp() })
-        toast.success('User added')
+        // Create Firebase Auth account via secondary app
+        // (so current admin doesn't get signed out)
+        const cred = await createUserWithEmailAndPassword(
+          secondaryAuth,
+          email,
+          data.password
+        )
+
+        // Save profile in Firestore using UID as document ID
+        await setDoc(doc(db, 'users', cred.user.uid), {
+          name:         data.name,
+          username:     data.username.trim().toLowerCase(),
+          email,
+          role:         data.role,
+          assigned_pos: data.assigned_pos || null,
+          created_at:   serverTimestamp(),
+        })
+
+        // Sign out from secondary app immediately
+        await secondaryAuth.signOut()
+
+        toast.success(`User "${data.username}" created`)
       }
+
       setShowModal(false)
       loadData()
     } catch (e) {
-      toast.error(e.message)
+      if (e.code === 'auth/email-already-in-use') {
+        toast.error('That username is already taken')
+      } else {
+        toast.error(e.message)
+      }
+    } finally {
+      setSaving(false)
     }
   }
 
   async function handleDelete(u) {
-    if (!confirm(`Delete ${u.name}?`)) return
+    if (!confirm(`Delete user "${u.name}"? They will no longer be able to log in.`)) return
     await deleteDoc(doc(db, 'users', u.id))
     toast.success('User deleted')
     loadData()
   }
 
-  const ROLE_BADGE = {
-    super_admin: 'bg-orange-100 text-orange-700',
-    pos_manager: 'bg-blue-100 text-blue-700',
-    accountant:  'bg-purple-100 text-purple-700',
-  }
-
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <h1 className="page-title">User Management</h1>
+        <div>
+          <h1 className="page-title">User Management</h1>
+          <p className="text-xs text-gray-500 mt-0.5">
+            Super admins can create unlimited POS Managers
+          </p>
+        </div>
         <button onClick={openCreate} className="btn-primary btn-sm flex items-center gap-1.5">
           <Plus size={15} /> Add User
         </button>
+      </div>
+
+      {/* Stats bar */}
+      <div className="grid grid-cols-3 gap-2">
+        {['super_admin','pos_manager','accountant'].map(r => (
+          <div key={r} className="card p-3 text-center">
+            <p className="text-xl font-bold text-gray-800 dark:text-white">
+              {users.filter(u => u.role === r).length}
+            </p>
+            <p className="text-xs text-gray-500">{ROLE_LABEL[r]}</p>
+          </div>
+        ))}
       </div>
 
       {loading ? (
@@ -85,7 +138,7 @@ export default function UserManagement() {
       ) : users.length === 0 ? (
         <div className="card p-10 text-center">
           <Users size={40} className="mx-auto text-gray-300 mb-3" />
-          <p className="text-gray-500">No users yet. Add your first team member.</p>
+          <p className="text-gray-500">No users yet.</p>
         </div>
       ) : (
         <div className="card overflow-hidden">
@@ -98,13 +151,13 @@ export default function UserManagement() {
                   </span>
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-semibold text-gray-800 dark:text-white truncate">{u.name}</p>
-                  <p className="text-xs text-gray-500 truncate">{u.email}</p>
+                  <p className="text-sm font-semibold text-gray-800 dark:text-white">{u.name}</p>
+                  <p className="text-xs text-gray-400 font-mono">@{u.username ?? u.email?.split('@')[0]}</p>
                 </div>
-                <span className={`text-xs px-2 py-1 rounded-full font-medium hidden sm:inline-block ${ROLE_BADGE[u.role] ?? 'bg-gray-100 text-gray-600'}`}>
-                  {u.role?.replace('_', ' ')}
+                <span className={`text-xs px-2 py-1 rounded-full font-medium hidden sm:block ${ROLE_BADGE[u.role] ?? 'bg-gray-100 text-gray-600'}`}>
+                  {ROLE_LABEL[u.role] ?? u.role}
                 </span>
-                <div className="flex items-center gap-1">
+                <div className="flex gap-1">
                   <button onClick={() => openEdit(u)}
                     className="p-2 text-gray-400 hover:text-mango-600 rounded-lg hover:bg-mango-50">
                     <Pencil size={15} />
@@ -123,7 +176,7 @@ export default function UserManagement() {
       {/* Modal */}
       {showModal && (
         <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/50 px-4">
-          <div className="card w-full max-w-md p-5 max-h-[90vh] overflow-y-auto">
+          <div className="card w-full max-w-md p-5 max-h-[92vh] overflow-y-auto">
             <div className="flex items-center justify-between mb-4">
               <h2 className="section-title">{editing ? 'Edit User' : 'Add New User'}</h2>
               <button onClick={() => setShowModal(false)} className="p-1 text-gray-400 hover:text-gray-600">
@@ -134,27 +187,49 @@ export default function UserManagement() {
             <form onSubmit={handleSubmit(onSubmit)} className="space-y-3">
               <div>
                 <label className="label">Full Name <span className="text-red-500">*</span></label>
-                <input className="input-field" placeholder="John Doe" {...register('name', R)} />
+                <input className="input-field" placeholder="Sowmya Reddy"
+                  {...register('name', R)} />
                 {errors.name && <p className="text-red-500 text-xs mt-1">{errors.name.message}</p>}
               </div>
-              <div>
-                <label className="label">Email <span className="text-red-500">*</span></label>
-                <input className="input-field" type="email" placeholder="user@example.com"
-                  {...register('email', {
-                    required: 'Required',
-                    pattern: { value: /^\S+@\S+\.\S+$/, message: 'Enter valid email' }
-                  })} />
-                {errors.email && <p className="text-red-500 text-xs mt-1">{errors.email.message}</p>}
-              </div>
-              <div>
-                <label className="label">Phone <span className="text-red-500">*</span></label>
-                <input className="input-field" type="tel" placeholder="9876543210"
-                  {...register('phone', {
-                    required: 'Required',
-                    pattern: { value: /^[0-9]{10}$/, message: '10-digit number' }
-                  })} />
-                {errors.phone && <p className="text-red-500 text-xs mt-1">{errors.phone.message}</p>}
-              </div>
+
+              {!editing && (
+                <>
+                  <div>
+                    <label className="label">Username <span className="text-red-500">*</span></label>
+                    <div className="flex items-center gap-2">
+                      <input className="input-field" placeholder="sowmyawc"
+                        autoCapitalize="none" autoCorrect="off"
+                        {...register('username', {
+                          required: 'Required',
+                          pattern: { value: /^[a-zA-Z0-9_]+$/, message: 'Letters, numbers and _ only' }
+                        })} />
+                    </div>
+                    <p className="text-xs text-gray-400 mt-1">They will log in as: username@{DOMAIN}</p>
+                    {errors.username && <p className="text-red-500 text-xs mt-1">{errors.username.message}</p>}
+                  </div>
+
+                  <div>
+                    <label className="label">Password <span className="text-red-500">*</span></label>
+                    <div className="relative">
+                      <input
+                        type={showPw ? 'text' : 'password'}
+                        className="input-field pr-10"
+                        placeholder="Min 6 characters"
+                        {...register('password', {
+                          required: 'Required',
+                          minLength: { value: 6, message: 'Min 6 characters' }
+                        })}
+                      />
+                      <button type="button" onClick={() => setShowPw(v => !v)}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400">
+                        {showPw ? <EyeOff size={15} /> : <Eye size={15} />}
+                      </button>
+                    </div>
+                    {errors.password && <p className="text-red-500 text-xs mt-1">{errors.password.message}</p>}
+                  </div>
+                </>
+              )}
+
               <div>
                 <label className="label">Role <span className="text-red-500">*</span></label>
                 <select className="input-field" {...register('role', R)}>
@@ -165,21 +240,22 @@ export default function UserManagement() {
                 </select>
                 {errors.role && <p className="text-red-500 text-xs mt-1">{errors.role.message}</p>}
               </div>
+
               {roleVal === 'pos_manager' && (
                 <div>
-                  <label className="label">Assign POS Location <span className="text-red-500">*</span></label>
-                  <select className="input-field" {...register('assigned_pos', R)}>
-                    <option value="">Select location…</option>
+                  <label className="label">Assign POS Location</label>
+                  <select className="input-field" {...register('assigned_pos')}>
+                    <option value="">None / will select at stall</option>
                     {posLocs.map(p => (
                       <option key={p.id} value={p.id}>{p.pos_name}</option>
                     ))}
                   </select>
-                  {errors.assigned_pos && <p className="text-red-500 text-xs mt-1">{errors.assigned_pos.message}</p>}
                 </div>
               )}
+
               <div className="flex gap-2 pt-2">
-                <button type="submit" className="btn-primary flex-1">
-                  {editing ? 'Save Changes' : 'Add User'}
+                <button type="submit" disabled={saving} className="btn-primary flex-1">
+                  {saving ? 'Creating…' : editing ? 'Save Changes' : 'Create User'}
                 </button>
                 <button type="button" onClick={() => setShowModal(false)} className="btn-secondary flex-1">
                   Cancel

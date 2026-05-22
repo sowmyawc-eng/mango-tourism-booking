@@ -104,20 +104,42 @@ export default function BookingDetail() {
           </span>
         </div>
 
-        <div className="flex items-start justify-between text-sm gap-4">
-          <span className="text-gray-500 flex-shrink-0">Transaction ID</span>
-          <span className="font-mono font-semibold text-gray-800 dark:text-white text-right break-all">
-            {booking.transaction_id ?? '—'}
-          </span>
-        </div>
-
-        {booking.transaction_id && (
-          <div className="mt-2 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-xl">
-            <p className="text-xs text-blue-600 font-medium">
-              💡 Verify this Transaction ID in your UPI app or bank statement before confirming.
-            </p>
+        {booking.upi_id && (
+          <div className="flex items-start justify-between text-sm gap-4">
+            <span className="text-gray-500 flex-shrink-0">UPI ID</span>
+            <span className="font-mono font-semibold text-gray-800 dark:text-white text-right break-all">
+              {booking.upi_id}
+            </span>
           </div>
         )}
+
+        {/* Legacy: show old transaction_id if present */}
+        {booking.transaction_id && !booking.upi_id && (
+          <div className="flex items-start justify-between text-sm gap-4">
+            <span className="text-gray-500 flex-shrink-0">Transaction ID</span>
+            <span className="font-mono font-semibold text-gray-800 dark:text-white text-right break-all">
+              {booking.transaction_id}
+            </span>
+          </div>
+        )}
+
+        {/* Receipt image */}
+        {booking.receipt_image && (
+          <div className="pt-2">
+            <p className="text-xs text-gray-400 mb-2">Payment Receipt</p>
+            <img
+              src={booking.receipt_image}
+              alt="Payment receipt"
+              className="w-full max-h-72 object-contain rounded-xl border border-gray-200 bg-gray-50"
+            />
+          </div>
+        )}
+
+        <div className="mt-2 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-xl">
+          <p className="text-xs text-blue-600 font-medium">
+            💡 Verify the receipt and UPI ID in your UPI app or bank statement before confirming payment.
+          </p>
+        </div>
       </div>
 
       {/* Accountant Actions */}

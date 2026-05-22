@@ -1,7 +1,6 @@
 import { initializeApp } from 'firebase/app'
+import { getAuth } from 'firebase/auth'
 import { getFirestore } from 'firebase/firestore'
-
-// No Firebase Storage needed — payment verified via Transaction ID
 
 const firebaseConfig = {
   apiKey:            import.meta.env.VITE_FIREBASE_API_KEY,
@@ -12,6 +11,16 @@ const firebaseConfig = {
   appId:             import.meta.env.VITE_FIREBASE_APP_ID,
 }
 
-const app        = initializeApp(firebaseConfig)
-export const db  = getFirestore(app)
+// Primary app — used by the logged-in user
+const app  = initializeApp(firebaseConfig)
+export const auth = getAuth(app)
+export const db   = getFirestore(app)
+
+// Secondary app — used ONLY to create new user accounts
+// without signing out the current admin
+const secondaryApp  = initializeApp(firebaseConfig, 'secondary')
+export const secondaryAuth = getAuth(secondaryApp)
+
+export const DOMAIN = 'mango.app'    // internal only — user just types username
+
 export default app

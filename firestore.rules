@@ -2,22 +2,9 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // No authentication required — all reads and writes are open.
-    // Secure via Firebase project API key restrictions instead.
-
-    match /users/{docId} {
-      allow read, write: if true;
-    }
-
-    match /pos_locations/{docId} {
-      allow read, write: if true;
-    }
-
-    match /leads/{docId} {
-      allow read, write: if true;
-    }
-
-    match /bookings/{docId} {
+    // Open rules — all reads and writes allowed.
+    // Deploy with: firebase deploy --only firestore:rules
+    match /{document=**} {
       allow read, write: if true;
     }
   }
