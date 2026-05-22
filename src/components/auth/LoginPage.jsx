@@ -30,12 +30,13 @@ export default function LoginPage() {
                     bg-gradient-to-br from-mango-50 to-orange-100
                     dark:from-gray-900 dark:to-gray-800 px-4 py-8">
 
-      {/* Banner — natural aspect ratio, no cropping */}
-      <div className="w-full max-w-sm rounded-2xl overflow-hidden shadow-xl mb-2">
+      {/* Banner */}
+      <div className="w-full max-w-sm rounded-2xl overflow-hidden shadow-xl mb-2 bg-[#c8e8e4]">
         <img
           src="/banner.avif"
           alt="Hanu Reddy Mango Tourism – June 2026"
-          className="w-full h-auto block"
+          className="w-full block"
+          style={{ maxHeight: '96px', objectFit: 'contain' }}
         />
       </div>
 
