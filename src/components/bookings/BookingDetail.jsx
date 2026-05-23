@@ -22,7 +22,7 @@ const PROMO_LABEL = {
 export default function BookingDetail() {
   const { id }       = useParams()
   const navigate     = useNavigate()
-  const { role }     = useAuth()
+  const { role, currentUser, userProfile } = useAuth()
 
   const [booking,  setBooking]  = useState(null)
   const [loading,  setLoading]  = useState(true)
@@ -39,8 +39,11 @@ export default function BookingDetail() {
     setUpdating(true)
     try {
       await updateDoc(doc(db, 'bookings', id), {
-        payment_status: newStatus,
-        updated_at:     serverTimestamp(),
+        payment_status:            newStatus,
+        updated_at:                serverTimestamp(),
+        [`${newStatus}_by`]:       currentUser?.uid ?? 'unknown',
+        [`${newStatus}_by_name`]:  userProfile?.name ?? 'Unknown',
+        [`${newStatus}_at`]:       serverTimestamp(),
       })
       setBooking(b => ({ ...b, payment_status: newStatus }))
       const msg = {

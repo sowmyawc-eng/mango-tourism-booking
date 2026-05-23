@@ -1,6 +1,6 @@
 import { createContext, useContext, useEffect, useState } from 'react'
 import { signInWithEmailAndPassword, signOut, onAuthStateChanged } from 'firebase/auth'
-import { doc, getDoc } from 'firebase/firestore'
+import { doc, getDoc, addDoc, collection, serverTimestamp } from 'firebase/firestore'
 import { auth, db, DOMAIN } from '../firebase'
 
 const AuthContext = createContext(null)
@@ -16,7 +16,14 @@ export function AuthProvider({ children }) {
   }
 
   async function login(username, password) {
-    return signInWithEmailAndPassword(auth, toEmail(username), password)
+    const cred = await signInWithEmailAndPassword(auth, toEmail(username), password)
+    // Record login event (non-blocking — don't await so login stays fast)
+    addDoc(collection(db, 'login_activity'), {
+      uid:          cred.user.uid,
+      username:     username.trim().toLowerCase(),
+      logged_in_at: serverTimestamp(),
+    }).catch(() => {})
+    return cred
   }
 
   async function logout() {

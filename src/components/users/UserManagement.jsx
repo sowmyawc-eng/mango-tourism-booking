@@ -6,6 +6,7 @@ import {
 import { createUserWithEmailAndPassword, deleteUser } from 'firebase/auth'
 import { db, secondaryAuth, DOMAIN } from '../../firebase'
 import { useForm } from 'react-hook-form'
+import { useAuth } from '../../contexts/AuthContext'
 import toast from 'react-hot-toast'
 import { format } from 'date-fns'
 import { Plus, Pencil, Trash2, X, Users, Eye, EyeOff } from 'lucide-react'
@@ -23,6 +24,7 @@ const ROLE_LABEL = {
 }
 
 export default function UserManagement() {
+  const { currentUser, userProfile } = useAuth()
   const [users,     setUsers]     = useState([])
   const [posLocs,   setPosLocs]   = useState([])
   const [loading,   setLoading]   = useState(true)
@@ -74,12 +76,14 @@ export default function UserManagement() {
 
         // Save profile in Firestore using UID as document ID
         await setDoc(doc(db, 'users', cred.user.uid), {
-          name:         data.name,
-          username:     data.username.trim().toLowerCase(),
+          name:              data.name,
+          username:          data.username.trim().toLowerCase(),
           email,
-          role:         data.role,
-          assigned_pos: data.assigned_pos || null,
-          created_at:   serverTimestamp(),
+          role:              data.role,
+          assigned_pos:      data.assigned_pos || null,
+          created_at:        serverTimestamp(),
+          created_by:        currentUser?.uid ?? 'system',
+          created_by_name:   userProfile?.name ?? 'Admin',
         })
 
         // Sign out from secondary app immediately

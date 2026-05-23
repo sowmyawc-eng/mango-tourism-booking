@@ -19,6 +19,7 @@ import UserManagement       from './components/users/UserManagement'
 import POSLocations         from './components/pos/POSLocations'
 import PromoCodeManager     from './components/pos/PromoCodeManager'
 import TicketCalculator     from './components/pos/TicketCalculator'
+import UserActivityReport   from './components/admin/UserActivityReport'
 
 // ── Redirect to correct dashboard based on role ──────────────────────
 function DashboardRedirect() {
@@ -81,6 +82,11 @@ function AppRoutes() {
         {/* Ticket Calculator — admin + POS */}
         <Route path="/calculator" element={
           <Protected roles={['super_admin','pos_manager']}><TicketCalculator /></Protected>
+        }/>
+
+        {/* User Activity Report — admin only */}
+        <Route path="/admin/activity" element={
+          <Protected roles={['super_admin']}><UserActivityReport /></Protected>
         }/>
 
         {/* Shared */}

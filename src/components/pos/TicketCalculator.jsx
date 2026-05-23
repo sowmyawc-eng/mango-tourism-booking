@@ -5,7 +5,7 @@ import {
 } from 'firebase/firestore'
 import { db } from '../../firebase'
 import { useAuth } from '../../contexts/AuthContext'
-import { Save, Users, Baby, Tag, Calculator, RefreshCw } from 'lucide-react'
+import { Save, Users, Baby, Tag, Calculator, RefreshCw, Plus, Minus } from 'lucide-react'
 import toast from 'react-hot-toast'
 
 const PROMO_META = {
@@ -216,30 +216,59 @@ export default function TicketCalculator() {
       <div className="card p-4 space-y-4">
         <h2 className="section-title">Calculate</h2>
 
-        {/* Headcount */}
+        {/* Headcount — stepper buttons (mobile-friendly) */}
         <div className="grid grid-cols-2 gap-3">
+          {/* Adults */}
           <div>
             <label className="label flex items-center gap-1.5">
               <Users size={13} className="text-gray-400" /> Adults
             </label>
-            <input
-              className="input-field text-center text-2xl font-bold"
-              type="number" inputMode="numeric" min="1"
-              value={adults}
-              onChange={e => setAdults(Math.max(1, Number(e.target.value) || 1))}
-            />
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => setAdults(a => Math.max(1, a - 1))}
+                className="w-10 h-10 rounded-xl bg-gray-100 hover:bg-gray-200 active:bg-gray-300 flex items-center justify-center flex-shrink-0 transition-colors"
+              >
+                <Minus size={16} className="text-gray-600" />
+              </button>
+              <span className="flex-1 text-center text-2xl font-bold text-gray-800 dark:text-white">
+                {adults}
+              </span>
+              <button
+                type="button"
+                onClick={() => setAdults(a => a + 1)}
+                className="w-10 h-10 rounded-xl bg-mango-100 hover:bg-mango-200 active:bg-mango-300 flex items-center justify-center flex-shrink-0 transition-colors"
+              >
+                <Plus size={16} className="text-mango-700" />
+              </button>
+            </div>
             <p className="text-xs text-center text-gray-400 mt-1">× ₹{prices.adult_price} = ₹{adultCost}</p>
           </div>
+
+          {/* Kids */}
           <div>
             <label className="label flex items-center gap-1.5">
               <Baby size={13} className="text-gray-400" /> Kids (4–10)
             </label>
-            <input
-              className="input-field text-center text-2xl font-bold"
-              type="number" inputMode="numeric" min="0"
-              value={kids}
-              onChange={e => setKids(Math.max(0, Number(e.target.value) || 0))}
-            />
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => setKids(k => Math.max(0, k - 1))}
+                className="w-10 h-10 rounded-xl bg-gray-100 hover:bg-gray-200 active:bg-gray-300 flex items-center justify-center flex-shrink-0 transition-colors"
+              >
+                <Minus size={16} className="text-gray-600" />
+              </button>
+              <span className="flex-1 text-center text-2xl font-bold text-gray-800 dark:text-white">
+                {kids}
+              </span>
+              <button
+                type="button"
+                onClick={() => setKids(k => k + 1)}
+                className="w-10 h-10 rounded-xl bg-blue-100 hover:bg-blue-200 active:bg-blue-300 flex items-center justify-center flex-shrink-0 transition-colors"
+              >
+                <Plus size={16} className="text-blue-700" />
+              </button>
+            </div>
             <p className="text-xs text-center text-gray-400 mt-1">× ₹{prices.kid_price} = ₹{kidCost}</p>
           </div>
         </div>
