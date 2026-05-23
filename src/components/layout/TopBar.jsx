@@ -1,21 +1,27 @@
-import { Menu, Sun, Moon } from 'lucide-react'
+import { Menu, Sun, Moon, MessageCircle } from 'lucide-react'
 import { useState, useEffect } from 'react'
-import { useLocation } from 'react-router-dom'
+import { useLocation, useNavigate } from 'react-router-dom'
+import NotificationBell from './NotificationBell'
 
 const PAGE_TITLES = {
   '/dashboard':            'Dashboard',
+  '/admin/dashboard':      'Dashboard',
   '/pos/dashboard':        'POS Dashboard',
   '/accountant/dashboard': 'Payment Verification',
+  '/admin/activity':       'Activity Report',
   '/leads':                'Leads',
   '/bookings':             'Bookings',
-  '/bookings/new':         'New Booking',
   '/users':                'User Management',
   '/pos-locations':        'POS Locations',
+  '/promo-codes':          'Promo Codes',
+  '/calculator':           'Ticket Calculator',
+  '/messages':             'Messages',
 }
 
 export default function TopBar({ onMenuClick }) {
   const [dark, setDark] = useState(() => localStorage.getItem('theme') === 'dark')
   const location = useLocation()
+  const navigate  = useNavigate()
 
   useEffect(() => {
     document.documentElement.classList.toggle('dark', dark)
@@ -35,6 +41,19 @@ export default function TopBar({ onMenuClick }) {
 
       <h1 className="flex-1 text-base font-bold text-gray-800 dark:text-white">{title}</h1>
 
+      {/* Messages shortcut */}
+      <button
+        onClick={() => navigate('/messages')}
+        className="p-2 rounded-xl text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+        title="Messages"
+      >
+        <MessageCircle size={18} />
+      </button>
+
+      {/* Notification bell */}
+      <NotificationBell />
+
+      {/* Dark mode toggle */}
       <button
         onClick={() => setDark(v => !v)}
         className="p-2 rounded-xl text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"

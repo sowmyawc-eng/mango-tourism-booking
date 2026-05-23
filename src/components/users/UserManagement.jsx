@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import {
   collection, getDocs, updateDoc,
-  deleteDoc, doc, serverTimestamp, setDoc
+  deleteDoc, doc, serverTimestamp, setDoc, addDoc,
 } from 'firebase/firestore'
 import { createUserWithEmailAndPassword, deleteUser } from 'firebase/auth'
 import { db, secondaryAuth, DOMAIN } from '../../firebase'
@@ -9,7 +9,7 @@ import { useForm } from 'react-hook-form'
 import { useAuth } from '../../contexts/AuthContext'
 import toast from 'react-hot-toast'
 import { format } from 'date-fns'
-import { Plus, Pencil, Trash2, X, Users, Eye, EyeOff } from 'lucide-react'
+import { Plus, Pencil, Trash2, X, Users, Eye, EyeOff, KeyRound } from 'lucide-react'
 
 const ROLE_BADGE = {
   super_admin: 'bg-orange-100 text-orange-700',
@@ -28,10 +28,14 @@ export default function UserManagement() {
   const [users,     setUsers]     = useState([])
   const [posLocs,   setPosLocs]   = useState([])
   const [loading,   setLoading]   = useState(true)
-  const [showModal, setShowModal] = useState(false)
-  const [editing,   setEditing]   = useState(null)
-  const [showPw,    setShowPw]    = useState(false)
-  const [saving,    setSaving]    = useState(false)
+  const [showModal,    setShowModal]    = useState(false)
+  const [editing,      setEditing]      = useState(null)
+  const [showPw,       setShowPw]       = useState(false)
+  const [saving,       setSaving]       = useState(false)
+  const [resetTarget,  setResetTarget]  = useState(null)   // user being reset
+  const [newPw,        setNewPw]        = useState('')
+  const [showNewPw,    setShowNewPw]    = useState(false)
+  const [resetting,    setResetting]    = useState(false)
 
   const { register, handleSubmit, reset, watch, formState: { errors } } = useForm()
   const roleVal = watch('role')
@@ -112,6 +116,38 @@ export default function UserManagement() {
     loadData()
   }
 
+  async function handlePasswordReset() {
+    if (!newPw || newPw.length < 6) { toast.error('Password must be at least 6 characters'); return }
+    setResetting(true)
+    try {
+      // Store reset in Firestore — applied automatically on user's next login
+      await setDoc(doc(db, 'password_resets', resetTarget.id), {
+        new_password:    newPw,
+        reset_by:        currentUser?.uid,
+        reset_by_name:   userProfile?.name ?? 'Admin',
+        reset_at:        serverTimestamp(),
+      })
+      // Send in-app notification to the user
+      await addDoc(collection(db, 'notifications'), {
+        to_uid:     resetTarget.id,
+        from_uid:   currentUser?.uid,
+        from_name:  userProfile?.name ?? 'Admin',
+        type:       'password_reset',
+        title:      'Password reset by admin',
+        body:       `Your password has been reset by ${userProfile?.name ?? 'Admin'}. It will update automatically on your next login.`,
+        read:       false,
+        created_at: serverTimestamp(),
+      })
+      toast.success(`Password reset set for ${resetTarget.name}. It applies on their next login.`)
+      setResetTarget(null)
+      setNewPw('')
+    } catch (e) {
+      toast.error(e.message)
+    } finally {
+      setResetting(false)
+    }
+  }
+
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
@@ -188,11 +224,18 @@ export default function UserManagement() {
                   {/* Actions */}
                   <div className="flex gap-1 flex-shrink-0">
                     <button onClick={() => openEdit(u)}
-                      className="p-2 text-gray-400 hover:text-mango-600 rounded-lg hover:bg-mango-50">
+                      className="p-2 text-gray-400 hover:text-mango-600 rounded-lg hover:bg-mango-50"
+                      title="Edit user">
                       <Pencil size={15} />
                     </button>
+                    <button onClick={() => { setResetTarget(u); setNewPw(''); setShowNewPw(false) }}
+                      className="p-2 text-gray-400 hover:text-blue-600 rounded-lg hover:bg-blue-50"
+                      title="Reset password">
+                      <KeyRound size={15} />
+                    </button>
                     <button onClick={() => handleDelete(u)}
-                      className="p-2 text-gray-400 hover:text-red-500 rounded-lg hover:bg-red-50">
+                      className="p-2 text-gray-400 hover:text-red-500 rounded-lg hover:bg-red-50"
+                      title="Delete user">
                       <Trash2 size={15} />
                     </button>
                   </div>
@@ -203,7 +246,65 @@ export default function UserManagement() {
         </div>
       )}
 
-      {/* Modal */}
+      {/* ── Reset Password Modal ──────────────────────────────────────────── */}
+      {resetTarget && (
+        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/50 px-4">
+          <div className="card w-full max-w-sm p-5">
+            <div className="flex items-center justify-between mb-4">
+              <div>
+                <h2 className="section-title flex items-center gap-2">
+                  <KeyRound size={15} className="text-blue-500" /> Reset Password
+                </h2>
+                <p className="text-xs text-gray-500 mt-0.5">for <strong>{resetTarget.name}</strong></p>
+              </div>
+              <button onClick={() => setResetTarget(null)} className="p-1 text-gray-400 hover:text-gray-600">
+                <X size={18} />
+              </button>
+            </div>
+
+            <div className="bg-blue-50 dark:bg-blue-900/20 rounded-xl p-3 mb-4">
+              <p className="text-xs text-blue-700 dark:text-blue-300 leading-relaxed">
+                The new password will apply automatically on the user's <strong>next login</strong>.
+                They will also receive an in-app notification. Share the new password with them via Messages.
+              </p>
+            </div>
+
+            <div className="space-y-3">
+              <div>
+                <label className="label">New Password</label>
+                <div className="relative">
+                  <input
+                    type={showNewPw ? 'text' : 'password'}
+                    className="input-field pr-10"
+                    placeholder="Min 6 characters"
+                    value={newPw}
+                    onChange={e => setNewPw(e.target.value)}
+                  />
+                  <button type="button" onClick={() => setShowNewPw(v => !v)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
+                    <EyeOff size={15} />
+                  </button>
+                </div>
+              </div>
+              <div className="flex gap-2">
+                <button
+                  onClick={handlePasswordReset}
+                  disabled={resetting}
+                  className="btn-primary flex-1 flex items-center justify-center gap-2"
+                >
+                  <KeyRound size={14} />
+                  {resetting ? 'Setting…' : 'Set New Password'}
+                </button>
+                <button onClick={() => setResetTarget(null)} className="btn-secondary flex-1">
+                  Cancel
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── Create / Edit User Modal ──────────────────────────────────────── */}
       {showModal && (
         <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/50 px-4">
           <div className="card w-full max-w-md p-5 max-h-[92vh] overflow-y-auto">

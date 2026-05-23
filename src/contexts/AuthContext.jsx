@@ -1,6 +1,6 @@
 import { createContext, useContext, useEffect, useState } from 'react'
-import { signInWithEmailAndPassword, signOut, onAuthStateChanged } from 'firebase/auth'
-import { doc, getDoc, addDoc, collection, serverTimestamp } from 'firebase/firestore'
+import { signInWithEmailAndPassword, signOut, onAuthStateChanged, updatePassword } from 'firebase/auth'
+import { doc, getDoc, addDoc, deleteDoc, collection, serverTimestamp } from 'firebase/firestore'
 import { auth, db, DOMAIN } from '../firebase'
 
 const AuthContext = createContext(null)
@@ -17,7 +17,18 @@ export function AuthProvider({ children }) {
 
   async function login(username, password) {
     const cred = await signInWithEmailAndPassword(auth, toEmail(username), password)
-    // Record login event (non-blocking — don't await so login stays fast)
+
+    // Check for admin-initiated password reset — apply it right after fresh auth
+    try {
+      const resetSnap = await getDoc(doc(db, 'password_resets', cred.user.uid))
+      if (resetSnap.exists()) {
+        const { new_password } = resetSnap.data()
+        await updatePassword(cred.user, new_password)
+        await deleteDoc(doc(db, 'password_resets', cred.user.uid))
+      }
+    } catch (_) {}
+
+    // Record login event (non-blocking)
     addDoc(collection(db, 'login_activity'), {
       uid:          cred.user.uid,
       username:     username.trim().toLowerCase(),

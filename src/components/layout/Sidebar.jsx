@@ -1,7 +1,7 @@
 import { NavLink } from 'react-router-dom'
 import {
   LayoutDashboard, Users, MapPin, ClipboardList,
-  BookOpen, Leaf, LogOut, X, CheckSquare, QrCode, UserCog, Tag, Calculator, BarChart2
+  BookOpen, Leaf, LogOut, X, CheckSquare, QrCode, UserCog, Tag, Calculator, BarChart2, MessageCircle
 } from 'lucide-react'
 import { useAuth } from '../../contexts/AuthContext'
 import toast from 'react-hot-toast'
@@ -16,6 +16,7 @@ const NAV = {
     { to: '/calculator',       icon: Calculator,      label: 'Ticket Calculator'    },
     { to: '/admin/activity',   icon: BarChart2,       label: 'Activity Report'      },
     { to: '/users',            icon: UserCog,         label: 'User Management'      },
+    { to: '/messages',         icon: MessageCircle,   label: 'Messages'             },
     { to: '/qr-display',       icon: QrCode,          label: 'Show QR to Customer', external: true },
   ],
   pos_manager: [
@@ -24,11 +25,13 @@ const NAV = {
     { to: '/leads',            icon: Users,           label: 'Leads'                },
     { to: '/pos-locations',    icon: MapPin,          label: 'Locations'            },
     { to: '/calculator',       icon: Calculator,      label: 'Ticket Calculator'    },
+    { to: '/messages',         icon: MessageCircle,   label: 'Messages'             },
     { to: '/qr-display',       icon: QrCode,          label: 'Show QR to Customer', external: true },
   ],
   accountant: [
-    { to: '/accountant/dashboard', icon: CheckSquare, label: 'Verify Payments' },
-    { to: '/bookings',             icon: BookOpen,    label: 'All Bookings'    },
+    { to: '/accountant/dashboard', icon: CheckSquare,    label: 'Verify Payments' },
+    { to: '/bookings',             icon: BookOpen,       label: 'All Bookings'    },
+    { to: '/messages',             icon: MessageCircle,  label: 'Messages'        },
   ],
 }
 
