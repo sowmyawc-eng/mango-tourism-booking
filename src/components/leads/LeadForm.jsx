@@ -62,9 +62,8 @@ export default function LeadForm({ onClose, onSaved, existing }) {
               {errors.firstname && <p className="text-red-500 text-xs mt-1">{errors.firstname.message}</p>}
             </div>
             <div>
-              <label className="label">Last Name <span className="text-red-500">*</span></label>
-              <input className="input-field" placeholder="Kumar" {...register('lastname', R)} />
-              {errors.lastname && <p className="text-red-500 text-xs mt-1">{errors.lastname.message}</p>}
+              <label className="label">Last Name</label>
+              <input className="input-field" placeholder="Kumar" {...register('lastname')} />
             </div>
           </div>
 
@@ -73,30 +72,28 @@ export default function LeadForm({ onClose, onSaved, existing }) {
             <input className="input-field" type="tel" placeholder="9876543210"
               {...register('phone', {
                 required: 'Required',
-                pattern: { value: /^[0-9]{10}$/, message: 'Enter valid 10-digit number' }
+                pattern: { value: /^[6-9][0-9]{9}$/, message: 'Enter valid 10-digit mobile number' }
               })} />
             {errors.phone && <p className="text-red-500 text-xs mt-1">{errors.phone.message}</p>}
           </div>
 
           <div>
-            <label className="label">Email ID <span className="text-red-500">*</span></label>
+            <label className="label">Email ID</label>
             <input className="input-field" type="email" placeholder="ravi@example.com"
               {...register('email', {
-                required: 'Required',
                 pattern: { value: /^\S+@\S+\.\S+$/, message: 'Enter valid email' }
               })} />
             {errors.email && <p className="text-red-500 text-xs mt-1">{errors.email.message}</p>}
           </div>
 
           <div>
-            <label className="label">Interested Festival Date <span className="text-red-500">*</span></label>
-            <input className="input-field" type="date" {...register('festival_date', R)} />
-            {errors.festival_date && <p className="text-red-500 text-xs mt-1">{errors.festival_date.message}</p>}
+            <label className="label">Interested Festival Date</label>
+            <input className="input-field" type="date" {...register('festival_date')} />
           </div>
 
           <div>
-            <label className="label">Status <span className="text-red-500">*</span></label>
-            <select className="input-field" {...register('status', R)}>
+            <label className="label">Status</label>
+            <select className="input-field" {...register('status')}>
               <option value="new_lead">New Lead</option>
               <option value="interested">Interested</option>
               <option value="follow_up">Follow-up Required</option>
@@ -104,11 +101,10 @@ export default function LeadForm({ onClose, onSaved, existing }) {
           </div>
 
           <div>
-            <label className="label">Notes <span className="text-red-500">*</span></label>
+            <label className="label">Notes</label>
             <textarea className="input-field" rows={3}
               placeholder="Where did they enquire? What did they ask?"
-              {...register('notes', R)} />
-            {errors.notes && <p className="text-red-500 text-xs mt-1">{errors.notes.message}</p>}
+              {...register('notes')} />
           </div>
 
           <div className="flex gap-2 pt-1">
