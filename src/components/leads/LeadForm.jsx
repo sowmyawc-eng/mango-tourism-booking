@@ -1,16 +1,29 @@
-import { useState } from 'react'
-import { collection, addDoc, updateDoc, doc, serverTimestamp } from 'firebase/firestore'
+import { useState, useEffect } from 'react'
+import { collection, addDoc, updateDoc, doc, getDocs, serverTimestamp } from 'firebase/firestore'
 import { db } from '../../firebase'
 import { useForm } from 'react-hook-form'
+import { useAuth } from '../../contexts/AuthContext'
 import toast from 'react-hot-toast'
 import { X } from 'lucide-react'
 
 export default function LeadForm({ onClose, onSaved, existing }) {
-  const [saving, setSaving] = useState(false)
+  const [saving,     setSaving]     = useState(false)
+  const [locations,  setLocations]  = useState([])
+  const { role, userProfile } = useAuth()
+
+  const isPOS = role === 'pos_manager'
 
   const { register, handleSubmit, formState: { errors } } = useForm({
-    defaultValues: existing ?? {}
+    defaultValues: existing ?? {
+      pos_location: isPOS ? (userProfile?.assigned_pos ?? '') : '',
+    }
   })
+
+  useEffect(() => {
+    getDocs(collection(db, 'pos_locations')).then(snap => {
+      setLocations(snap.docs.map(d => ({ id: d.id, ...d.data() })))
+    })
+  }, [])
 
   const R = { required: 'This field is required' }
 
@@ -32,6 +45,7 @@ export default function LeadForm({ onClose, onSaved, existing }) {
           festival_date: data.festival_date,
           notes:         data.notes,
           status:        data.status || 'new_lead',
+          pos_location:  isPOS ? (userProfile?.assigned_pos ?? data.pos_location ?? '') : (data.pos_location ?? ''),
           created_at:    serverTimestamp(),
         })
         toast.success('Lead saved!')
@@ -89,6 +103,25 @@ export default function LeadForm({ onClose, onSaved, existing }) {
           <div>
             <label className="label">Interested Festival Date</label>
             <input className="input-field" type="date" {...register('festival_date')} />
+          </div>
+
+          <div>
+            <label className="label">POS Location <span className="text-red-500">*</span></label>
+            {isPOS ? (
+              <input
+                className="input-field bg-gray-50 text-gray-500 cursor-not-allowed"
+                readOnly
+                value={userProfile?.assigned_pos ?? ''}
+              />
+            ) : (
+              <select className="input-field" {...register('pos_location', { required: 'Select a location' })}>
+                <option value="">— Select location —</option>
+                {locations.map(l => (
+                  <option key={l.id} value={l.name ?? l.id}>{l.name ?? l.id}</option>
+                ))}
+              </select>
+            )}
+            {errors.pos_location && <p className="text-red-500 text-xs mt-1">{errors.pos_location.message}</p>}
           </div>
 
           <div>

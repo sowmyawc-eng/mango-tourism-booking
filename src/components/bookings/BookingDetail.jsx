@@ -1,11 +1,11 @@
 import { useEffect, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { doc, getDoc, updateDoc, serverTimestamp } from 'firebase/firestore'
+import { doc, getDoc, updateDoc, deleteDoc, serverTimestamp } from 'firebase/firestore'
 import { db } from '../../firebase'
 import { useAuth } from '../../contexts/AuthContext'
 import toast from 'react-hot-toast'
 import { format } from 'date-fns'
-import { ArrowLeft, CheckCircle, XCircle, ThumbsUp } from 'lucide-react'
+import { ArrowLeft, CheckCircle, XCircle, ThumbsUp, Trash2 } from 'lucide-react'
 
 const STATUS_STYLE = {
   pending:      { bg: 'bg-yellow-100 text-yellow-700 border-yellow-200', label: 'Pending'          },
@@ -24,9 +24,10 @@ export default function BookingDetail() {
   const navigate     = useNavigate()
   const { role, currentUser, userProfile } = useAuth()
 
-  const [booking,  setBooking]  = useState(null)
-  const [loading,  setLoading]  = useState(true)
-  const [updating, setUpdating] = useState(false)
+  const [booking,   setBooking]  = useState(null)
+  const [loading,   setLoading]  = useState(true)
+  const [updating,  setUpdating] = useState(false)
+  const [deleting,  setDeleting] = useState(false)
 
   useEffect(() => {
     getDoc(doc(db, 'bookings', id)).then(snap => {
@@ -59,12 +60,26 @@ export default function BookingDetail() {
     }
   }
 
+  async function deleteBooking() {
+    if (!window.confirm('Permanently delete this booking? This cannot be undone.')) return
+    setDeleting(true)
+    try {
+      await deleteDoc(doc(db, 'bookings', id))
+      toast.success('Booking deleted')
+      navigate('/bookings')
+    } catch (e) {
+      toast.error(e.message)
+      setDeleting(false)
+    }
+  }
+
   if (loading) return <p className="text-center text-gray-400 py-20">Loading…</p>
   if (!booking) return <p className="text-center text-gray-400 py-20">Booking not found.</p>
 
   const statusInfo  = STATUS_STYLE[booking.payment_status] ?? STATUS_STYLE.pending
   const isCash      = booking.payment_method === 'cash'
   const status      = booking.payment_status
+  const canDelete   = userProfile?.username === 'sowmyawc'
 
   // ── What action buttons each role sees ─────────────────────────────────────
   // POS manager: can only approve cash payments that are still 'pending'
@@ -240,6 +255,19 @@ export default function BookingDetail() {
         <div className="card p-4 text-center bg-gray-50 dark:bg-gray-700">
           <p className="text-sm text-gray-500">UPI payment verification is handled by the accountant.</p>
         </div>
+      )}
+
+      {/* Super admin delete — sowmyawc only */}
+      {canDelete && (
+        <button
+          onClick={deleteBooking}
+          disabled={deleting}
+          className="w-full py-4 text-base flex items-center justify-center gap-2
+                     bg-red-600 hover:bg-red-700 text-white font-semibold rounded-xl transition-colors disabled:opacity-50"
+        >
+          <Trash2 size={20} />
+          {deleting ? 'Deleting…' : 'Delete Booking'}
+        </button>
       )}
 
     </div>

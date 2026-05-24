@@ -13,8 +13,9 @@ const STATUS_MAP = {
 }
 
 export default function LeadList() {
-  const { role } = useAuth()
+  const { role, userProfile } = useAuth()
   const isAdmin  = role === 'super_admin'
+  const isPOS    = role === 'pos_manager'
 
   const [leads, setLeads]     = useState([])
   const [search, setSearch]   = useState('')
@@ -44,7 +45,9 @@ export default function LeadList() {
     const createdDate = l.created_at?.toDate ? l.created_at.toDate() : null
     const matchFrom = !dateFrom || !createdDate || !isBefore(createdDate, startOfDay(parseISO(dateFrom)))
     const matchTo   = !dateTo   || !createdDate || !isAfter(createdDate,  startOfDay(parseISO(dateTo + 'T23:59:59')))
-    return matchSearch && matchFilter && matchFrom && matchTo
+    // POS managers only see leads from their own assigned location
+    const matchLocation = !isPOS || (l.pos_location === userProfile?.assigned_pos)
+    return matchSearch && matchFilter && matchFrom && matchTo && matchLocation
   })
 
   async function deleteLead(id) {
@@ -157,6 +160,9 @@ export default function LeadList() {
                       {l.firstname} {l.lastname}
                     </p>
                     <p className="text-xs text-gray-500">{l.phone} · {l.email}</p>
+                    {l.pos_location && (
+                      <p className="text-xs text-mango-600 font-medium mt-0.5">📍 {l.pos_location}</p>
+                    )}
                     {l.notes && (
                       <p className="text-xs text-gray-400 truncate mt-0.5">{l.notes}</p>
                     )}
