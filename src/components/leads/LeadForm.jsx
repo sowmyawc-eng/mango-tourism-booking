@@ -14,8 +14,11 @@ export default function LeadForm({ onClose, onSaved, existing }) {
   const isPOS = role === 'pos_manager'
 
   const { register, handleSubmit, formState: { errors } } = useForm({
-    defaultValues: existing ?? {
-      pos_location: isPOS ? (userProfile?.assigned_pos ?? '') : '',
+    defaultValues: {
+      ...(existing ?? {}),
+      // For new leads by POS manager, lock location to their assigned pos
+      pos_location: existing?.pos_location
+        ?? (isPOS ? (userProfile?.assigned_pos ?? '') : ''),
     }
   })
 
@@ -32,8 +35,15 @@ export default function LeadForm({ onClose, onSaved, existing }) {
     try {
       if (existing) {
         await updateDoc(doc(db, 'leads', existing.id), {
-          ...data,
-          updated_at: serverTimestamp(),
+          firstname:     data.firstname,
+          lastname:      data.lastname,
+          phone:         data.phone,
+          email:         data.email,
+          festival_date: data.festival_date,
+          notes:         data.notes,
+          status:        data.status || 'new_lead',
+          pos_location:  isPOS ? (userProfile?.assigned_pos ?? existing.pos_location ?? '') : (data.pos_location ?? ''),
+          updated_at:    serverTimestamp(),
         })
         toast.success('Lead updated')
       } else {
@@ -117,7 +127,7 @@ export default function LeadForm({ onClose, onSaved, existing }) {
               <select className="input-field" {...register('pos_location', { required: 'Select a location' })}>
                 <option value="">— Select location —</option>
                 {locations.map(l => (
-                  <option key={l.id} value={l.name ?? l.id}>{l.name ?? l.id}</option>
+                  <option key={l.id} value={l.pos_name}>{l.pos_name}</option>
                 ))}
               </select>
             )}
