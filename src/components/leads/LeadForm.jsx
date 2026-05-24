@@ -13,12 +13,14 @@ export default function LeadForm({ onClose, onSaved, existing }) {
 
   const isPOS = role === 'pos_manager'
 
+  // assigned_pos on the user profile is the location doc ID.
+  // pos_location on a lead is also stored as the location doc ID.
+  const myLocationId = userProfile?.assigned_pos ?? ''
+
   const { register, handleSubmit, formState: { errors } } = useForm({
     defaultValues: {
       ...(existing ?? {}),
-      // For new leads by POS manager, lock location to their assigned pos
-      pos_location: existing?.pos_location
-        ?? (isPOS ? (userProfile?.assigned_pos ?? '') : ''),
+      pos_location: existing?.pos_location ?? (isPOS ? myLocationId : ''),
     }
   })
 
@@ -28,11 +30,17 @@ export default function LeadForm({ onClose, onSaved, existing }) {
     })
   }, [])
 
+  // Resolve display name from location ID
+  const myLocationName = locations.find(l => l.id === myLocationId)?.pos_name ?? myLocationId
+
   const R = { required: 'This field is required' }
 
   async function onSubmit(data) {
     setSaving(true)
     try {
+      // POS managers always use their own location ID; admin uses the dropdown selection
+      const locationId = isPOS ? myLocationId : (data.pos_location ?? '')
+
       if (existing) {
         await updateDoc(doc(db, 'leads', existing.id), {
           firstname:     data.firstname,
@@ -42,7 +50,7 @@ export default function LeadForm({ onClose, onSaved, existing }) {
           festival_date: data.festival_date,
           notes:         data.notes,
           status:        data.status || 'new_lead',
-          pos_location:  isPOS ? (userProfile?.assigned_pos ?? existing.pos_location ?? '') : (data.pos_location ?? ''),
+          pos_location:  locationId,
           updated_at:    serverTimestamp(),
         })
         toast.success('Lead updated')
@@ -55,7 +63,7 @@ export default function LeadForm({ onClose, onSaved, existing }) {
           festival_date: data.festival_date,
           notes:         data.notes,
           status:        data.status || 'new_lead',
-          pos_location:  isPOS ? (userProfile?.assigned_pos ?? data.pos_location ?? '') : (data.pos_location ?? ''),
+          pos_location:  locationId,
           created_at:    serverTimestamp(),
         })
         toast.success('Lead saved!')
@@ -118,16 +126,18 @@ export default function LeadForm({ onClose, onSaved, existing }) {
           <div>
             <label className="label">POS Location <span className="text-red-500">*</span></label>
             {isPOS ? (
+              /* POS manager sees their location name, locked */
               <input
                 className="input-field bg-gray-50 text-gray-500 cursor-not-allowed"
                 readOnly
-                value={userProfile?.assigned_pos ?? ''}
+                value={myLocationName}
               />
             ) : (
+              /* Admin picks from full dropdown — value stored is the doc ID */
               <select className="input-field" {...register('pos_location', { required: 'Select a location' })}>
                 <option value="">— Select location —</option>
                 {locations.map(l => (
-                  <option key={l.id} value={l.pos_name}>{l.pos_name}</option>
+                  <option key={l.id} value={l.id}>{l.pos_name}</option>
                 ))}
               </select>
             )}

@@ -6,6 +6,11 @@ import { format, isAfter, isBefore, parseISO, startOfDay } from 'date-fns'
 import LeadForm from './LeadForm'
 import { useAuth } from '../../contexts/AuthContext'
 
+// Helper: resolve location name from doc ID using a locations map
+function locName(locationId, locMap) {
+  return locMap[locationId]?.pos_name ?? locationId ?? '—'
+}
+
 const STATUS_MAP = {
   new_lead:   { label: 'New Lead',         color: 'bg-blue-100 text-blue-700'     },
   interested: { label: 'Interested',       color: 'bg-green-100 text-green-700'   },
@@ -17,19 +22,27 @@ export default function LeadList() {
   const isAdmin  = role === 'super_admin'
   const isPOS    = role === 'pos_manager'
 
-  const [leads, setLeads]     = useState([])
-  const [search, setSearch]   = useState('')
-  const [filter, setFilter]   = useState('all')
+  const [leads,    setLeads]    = useState([])
+  const [locMap,   setLocMap]   = useState({})   // { [docId]: { pos_name, ... } }
+  const [search,   setSearch]   = useState('')
+  const [filter,   setFilter]   = useState('all')
   const [dateFrom, setDateFrom] = useState('')
   const [dateTo,   setDateTo]   = useState('')
   const [showFilters, setShowFilters] = useState(false)
-  const [loading, setLoading] = useState(true)
+  const [loading,  setLoading]  = useState(true)
   const [showForm, setShowForm] = useState(false)
-  const [editing, setEditing]  = useState(null)
+  const [editing,  setEditing]  = useState(null)
 
   async function loadLeads() {
-    const snap = await getDocs(query(collection(db, 'leads'), orderBy('created_at', 'desc')))
-    setLeads(snap.docs.map(d => ({ id: d.id, ...d.data() })))
+    const [leadsSnap, locsSnap] = await Promise.all([
+      getDocs(query(collection(db, 'leads'), orderBy('created_at', 'desc'))),
+      getDocs(collection(db, 'pos_locations')),
+    ])
+    setLeads(leadsSnap.docs.map(d => ({ id: d.id, ...d.data() })))
+    // Build id → location object map for fast name lookups
+    const map = {}
+    locsSnap.docs.forEach(d => { map[d.id] = { pos_name: d.data().pos_name, ...d.data() } })
+    setLocMap(map)
     setLoading(false)
   }
 
@@ -45,7 +58,7 @@ export default function LeadList() {
     const createdDate = l.created_at?.toDate ? l.created_at.toDate() : null
     const matchFrom = !dateFrom || !createdDate || !isBefore(createdDate, startOfDay(parseISO(dateFrom)))
     const matchTo   = !dateTo   || !createdDate || !isAfter(createdDate,  startOfDay(parseISO(dateTo + 'T23:59:59')))
-    // POS managers only see leads from their own assigned location
+    // POS managers only see leads from their assigned location (both stored as doc ID)
     const matchLocation = !isPOS || (l.pos_location === userProfile?.assigned_pos)
     return matchSearch && matchFilter && matchFrom && matchTo && matchLocation
   })
@@ -161,7 +174,9 @@ export default function LeadList() {
                     </p>
                     <p className="text-xs text-gray-500">{l.phone} · {l.email}</p>
                     {l.pos_location && (
-                      <p className="text-xs text-mango-600 font-medium mt-0.5">📍 {l.pos_location}</p>
+                      <p className="text-xs text-mango-600 font-medium mt-0.5">
+                        📍 {locName(l.pos_location, locMap)}
+                      </p>
                     )}
                     {l.notes && (
                       <p className="text-xs text-gray-400 truncate mt-0.5">{l.notes}</p>
